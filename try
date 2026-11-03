@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulator Main Screen</title>
+<style>
+:root{
+  --chrome:#F0F0F0; --line:#B9B9B9; --ink:#1A1A1A; --muted:#5C5C5C;
+  --accent:#6B4FBB; --select:#CCE4F7; --hover:#E5F1FB; --work:#C9DEEB; --pane:#E8E8E8;
+  --ui:"Segoe UI",Tahoma,Arial,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:#6E7B86;font-family:var(--ui);font-size:13px;color:var(--ink);display:flex}
+.app{flex:1;display:flex;flex-direction:column;background:var(--chrome);border:1px solid #888;min-width:0}
+.titlebar{display:flex;align-items:center;height:30px;padding-left:8px;background:#fff;user-select:none}
+.titlebar .t{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.titlebar .ico{width:14px;height:14px;margin-right:6px;background:var(--accent);clip-path:polygon(0 0,100% 50%,0 100%)}
+.winbtn{width:44px;height:30px;border:0;background:none;font:inherit;font-size:14px;cursor:pointer}
+.winbtn:hover{background:#E5E5E5}.winbtn.x:hover{background:#E81123;color:#fff}
+.menubar{display:flex;background:#fff;position:relative;z-index:5}
+.menu{position:relative}
+.menu>button{border:0;background:none;font:inherit;padding:3px 9px;cursor:pointer}
+.menu>button:hover,.menu.open>button{background:var(--hover);outline:1px solid #CCE4F7}
+.drop{display:none;position:absolute;top:100%;left:0;min-width:190px;background:#F9F9F9;border:1px solid #A0A0A0;box-shadow:2px 2px 4px #0003;padding:2px 0}
+.menu.open .drop{display:block}
+.drop button{display:block;width:100%;text-align:left;border:0;background:none;font:inherit;padding:4px 24px;cursor:pointer}
+.drop button:hover{background:var(--select)}
+.drop hr{border:0;border-top:1px solid #D0D0D0;margin:3px 0}
+.toolbar{display:flex;align-items:center;gap:4px;padding:5px 6px;border-bottom:3px solid var(--accent)}
+.tb{width:26px;height:24px;border:1px solid transparent;background:none;border-radius:2px;cursor:pointer;display:grid;place-items:center;padding:0}
+.tb:hover{background:var(--hover);border-color:#99C9EF}
+.tb svg{width:17px;height:17px;fill:#3D3D3D}
+.sep{width:14px}
+.search{flex:1;display:flex;align-items:center;gap:6px;margin-left:16px;max-width:1080px}
+.search input{flex:1;height:26px;border:1px solid #9A9A9A;padding:0 6px;font:inherit;min-width:0}
+.search input:focus{outline:1px solid #0078D7;border-color:#0078D7}
+.brand{margin-left:auto;padding:0 10px 0 20px;font-weight:700;font-size:20px;letter-spacing:.06em;color:#3B3B3B}
+.body{flex:1;display:flex;min-height:0}
+.left{width:310px;background:var(--pane);border-right:4px solid #CFCFCF;display:flex;flex-direction:column;min-width:0}
+.filters{display:flex;gap:6px;padding:6px;border-bottom:1px solid var(--line)}
+.filters select{font:inherit;height:24px}
+.refresh{width:26px;height:24px;border:1px solid #9A9A9A;background:#fff;cursor:pointer;font-size:15px;line-height:1}
+.refresh:hover{background:var(--hover)}
+.tree{list-style:none;margin:0;padding:6px 0;overflow:auto;flex:1}
+.tree ul{list-style:none;margin:0;padding:0}
+.node{display:flex;align-items:center;gap:5px;height:24px;padding-right:8px;cursor:default;white-space:nowrap;user-select:none}
+.node:hover{background:var(--hover)}
+.node.sel{background:var(--select)}
+.node:focus-visible{outline:1px dotted #000}
+.tw{width:14px;text-align:center;color:var(--muted);font-size:10px;cursor:pointer}
+.icon{width:16px;height:16px;flex:none}
+.empty{color:var(--muted);font-style:italic}
+.work{flex:1;background:var(--work);position:relative;overflow:hidden}
+.child{position:absolute;top:30px;left:40px;width:min(520px,calc(100% - 60px));background:var(--chrome);border:1px solid #7A7A7A;box-shadow:3px 3px 8px #0004}
+.child .titlebar{height:28px}
+.child .content{padding:16px;line-height:1.5}
+.child .content p{margin:0 0 10px}
+.child .ok{float:right;font:inherit;padding:3px 18px;border:1px solid #0078D7;background:#E1E1E1;cursor:pointer}
+.status{display:grid;grid-template-columns:1.6fr 1fr .9fr .9fr .6fr;border-top:1px solid var(--line);background:var(--chrome);font-size:12px}
+.status div{padding:3px 10px;border-left:1px solid var(--line);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status div:first-child{border-left:0}
+.status button{border:0;background:none;font:inherit;cursor:pointer;padding:0}
+.status button:hover{text-decoration:underline}
+.toast{position:fixed;bottom:34px;right:16px;background:#FFFFE1;border:1px solid #767676;padding:6px 10px;box-shadow:2px 2px 4px #0003;font-size:12px;display:none;max-width:360px}
+@media (max-width:700px){.left{width:220px}.brand{display:none}.status{grid-template-columns:1fr 1fr}.status div:nth-child(n+3){display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="titlebar">
+    <span class="ico"></span>
+    <span class="t">Simulator - TRAINING - Business Date: 11-Mar-2025</span>
+    <button class="winbtn" data-msg="Minimize is disabled in the simulator." aria-label="Minimize">&#8211;</button>
+    <button class="winbtn" data-msg="Maximize is disabled in the simulator." aria-label="Maximize">&#9633;</button>
+    <button class="winbtn x" data-msg="Closing is disabled in the simulator." aria-label="Close">&#10005;</button>
+  </div>
+
+  <nav class="menubar" id="menubar">
+    <div class="menu"><button>File</button><div class="drop">
+      <button data-msg="Open: select a deal in the tree and double-click it.">Open...</button><hr>
+      <button data-msg="Exit is disabled in the simulator.">Exit</button></div></div>
+    <div class="menu"><button>Options</button><div class="drop">
+      <button data-msg="Not part of this scenario yet.">Preferences...</button></div></div>
+    <div class="menu"><button>Windows</button><div class="drop" id="winMenu">
+      <button data-msg="No window open.">(no open windows)</button></div></div>
+    <div class="menu"><button>Help</button><div class="drop">
+      <button data-msg="Simulator: training environment with fictitious data.">About Simulator</button></div></div>
+  </nav>
+
+  <div class="toolbar">
+    <button class="tb" title="Actions" data-msg="Actions: not part of this scenario yet."><svg viewBox="0 0 16 16"><path d="M2 4h8v2H2zm0 4h12v2H2zm0 4h6v2H2z"/></svg></button>
+    <button class="tb" title="Hierarchy" data-msg="Hierarchy: not part of this scenario yet."><svg viewBox="0 0 16 16"><path d="M1 2h5v4H1zm9 0h5v4h-5zM3 6h1v4h6v1H3zm7 3h5v4h-5z"/></svg></button>
+    <button class="tb" title="History" data-msg="History: not part of this scenario yet."><svg viewBox="0 0 16 16"><path d="M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1zm0 2a5 5 0 1 0 0 10A5 5 0 0 0 8 3zm-.7 1.5h1.4v3.2l2.3 1.4-.7 1.2-3-1.8z"/></svg></button>
+    <button class="tb" title="Home" data-msg="Home: you are on the main screen."><svg viewBox="0 0 16 16"><path d="M8 1l7 6h-2v8H9v-5H7v5H3V7H1z"/></svg></button>
+    <button class="tb" title="Work in Process" data-msg="Work in Process: not part of this scenario yet."><svg viewBox="0 0 16 16"><path d="M5 2h6v2h4v10H1V4h4zm1 1v1h4V3z"/></svg></button>
+    <span class="sep"></span>
+    <button class="tb" title="Alerts" data-msg="No alerts."><svg viewBox="0 0 16 16"><path d="M8 1l7.5 14H.5zm-.8 5v4h1.6V6zm0 5v1.6h1.6V11z"/></svg></button>
+    <button class="tb" title="Reports" data-msg="Reports: not part of this scenario yet."><svg viewBox="0 0 16 16"><path d="M1 14h14v1H1zM2 8h3v5H2zm4-3h3v8H6zm4-3h3v11h-3z"/></svg></button>
+    <div class="search">
+      <input id="search" placeholder="" aria-label="Search">
+      <button class="tb" id="searchBtn" title="Search"><svg viewBox="0 0 16 16"><path d="M10 1a5 5 0 1 1-3.2 8.8L2.4 14.2 1 12.8l4.4-4.4A5 5 0 0 1 10 1zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg></button>
+    </div>
+    <span class="brand">SIMULATOR</span>
+  </div>
+
+  <div class="body">
+    <aside class="left">
+      <div class="filters">
+        <select id="filter" aria-label="Filter"><option>All</option><option>Deals</option><option>Customers</option></select>
+        <select id="order" aria-label="Sort order"><option>Ascending</option><option>Descending</option></select>
+        <button class="refresh" id="refresh" title="Refresh">&#8635;</button>
+      </div>
+      <ul class="tree" id="tree"></ul>
+    </aside>
+    <section class="work" id="work"></section>
+  </div>
+
+  <footer class="status">
+    <div>Last Successful Login: 2025-03-11 08:44:55</div>
+    <div></div>
+    <div><button data-msg="Process List: no process running.">Process List</button></div>
+    <div>TRAIN01</div>
+    <div>11-Mar-2025</div>
+  </footer>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const icons={
+  folder:'<svg class="icon" viewBox="0 0 16 16"><path fill="#4A5A8C" d="M1 3h5l1 2h8v9H1z"/></svg>',
+  deal:'<svg class="icon" viewBox="0 0 16 16"><path fill="#4A5A8C" d="M1 7l3-3 4 2 4-2 3 3-4 4-1-1-2 2-2-2-1 1z"/></svg>',
+  customer:'<svg class="icon" viewBox="0 0 16 16"><circle cx="8" cy="5" r="3" fill="#4A5A8C"/><path fill="#4A5A8C" d="M2 15c0-4 3-6 6-6s6 2 6 6z"/></svg>'
+};
+const items=[{name:'Deal1',type:'deal'},{name:'Deal2',type:'customer'},{name:'Deal3',type:'deal'}];
+let favOpen=true,myOpen=false,selected='Deal1';
+
+const toastEl=document.getElementById('toast');let tt;
+function toast(m){toastEl.textContent=m;toastEl.style.display='block';clearTimeout(tt);tt=setTimeout(()=>toastEl.style.display='none',2600)}
+
+function renderTree(){
+  const f=document.getElementById('filter').value, desc=document.getElementById('order').value==='Descending';
+  let list=items.filter(i=>f==='All'||(f==='Deals'&&i.type==='deal')||(f==='Customers'&&i.type==='customer'));
+  list.sort((a,b)=>desc?b.name.localeCompare(a.name):a.name.localeCompare(b.name));
+  const tree=document.getElementById('tree');
+  tree.innerHTML=`
+   <li><div class="node" style="padding-left:6px"><span class="tw" data-t="fav">${favOpen?'&#9660;':'&#9654;'}</span>${icons.folder}<span>[Favorites]</span></div>
+   ${favOpen?`<ul>
+     <li><div class="node" style="padding-left:24px"><span class="tw" data-t="my">${myOpen?'&#9660;':'&#9654;'}</span>${icons.folder}<span>MY DEALS</span></div>
+       ${myOpen?'<div class="node empty" style="padding-left:60px">(no items)</div>':''}</li>
+     ${list.map(i=>`<li><div class="node${i.name===selected?' sel':''}" tabindex="0" data-name="${i.name}" style="padding-left:42px">${icons[i.type]}<span>${i.name}</span></div></li>`).join('')}
+   </ul>`:''}</li>`;
+  tree.querySelectorAll('[data-t]').forEach(t=>t.onclick=()=>{t.dataset.t==='fav'?favOpen=!favOpen:myOpen=!myOpen;renderTree()});
+  tree.querySelectorAll('[data-name]').forEach(n=>{
+    n.onclick=()=>{selected=n.dataset.name;renderTree();tree.querySelector(`[data-name="${selected}"]`).focus()};
+    n.ondblclick=()=>openItem(n.dataset.name);
+    n.onkeydown=e=>{if(e.key==='Enter')openItem(n.dataset.name)};
+  });
+}
+
+function openItem(name){
+  const it=items.find(i=>i.name===name);
+  const work=document.getElementById('work');
+  work.innerHTML=`<div class="child" role="dialog" aria-label="${name}">
+    <div class="titlebar"><span class="ico"></span><span class="t">${it.type==='deal'?'Deal Notebook':'Customer Notebook'} - ${name}</span><button class="winbtn x" id="closeChild" aria-label="Close">&#10005;</button></div>
+    <div class="content"><p><b>${name}</b> opened.</p><p>The next screen of this scenario has not been built yet. It will appear here once its screenshot is added.</p><button class="ok" id="okChild">OK</button><div style="clear:both"></div></div></div>`;
+  document.getElementById('winMenu').innerHTML=`<button id="winItem">1 ${name}</button>`;
+  const close=()=>{work.innerHTML='';document.getElementById('winMenu').innerHTML='<button data-msg="No window open.">(no open windows)</button>';bindMsgs()};
+  document.getElementById('closeChild').onclick=close;document.getElementById('okChild').onclick=close;
+  document.getElementById('winItem').onclick=()=>toast(name+' is already open.');
+}
+
+function doSearch(){
+  const q=document.getElementById('search').value.trim().toLowerCase();
+  if(!q){toast('Enter a deal or customer name to search.');return}
+  const hit=items.find(i=>i.name.toLowerCase().includes(q));
+  if(!hit){toast(`No match found for "${document.getElementById('search').value.trim()}".`);return}
+  favOpen=true;selected=hit.name;renderTree();openItem(hit.name);
+}
+
+function bindMsgs(){document.querySelectorAll('[data-msg]').forEach(b=>b.onclick=e=>{e.stopPropagation();closeMenus();toast(b.dataset.msg)})}
+function closeMenus(){document.querySelectorAll('.menu.open').forEach(m=>m.classList.remove('open'))}
+document.querySelectorAll('.menu>button').forEach(b=>b.onclick=e=>{e.stopPropagation();const m=b.parentElement,o=m.classList.contains('open');closeMenus();if(!o)m.classList.add('open')});
+document.addEventListener('click',closeMenus);
+document.getElementById('searchBtn').onclick=doSearch;
+document.getElementById('search').onkeydown=e=>{if(e.key==='Enter')doSearch()};
+document.getElementById('filter').onchange=renderTree;
+document.getElementById('order').onchange=renderTree;
+document.getElementById('refresh').onclick=()=>{renderTree();toast('List refreshed.')};
+renderTree();bindMsgs();
+</script>
+</body>
+</html>
