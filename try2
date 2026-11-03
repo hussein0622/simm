@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulator Main Screen</title>
+<style>
+:root{
+  --chrome:#F0F0F0; --line:#B9B9B9; --ink:#1A1A1A; --muted:#5C5C5C;
+  --accent:#6B4FBB; --select:#CCE4F7; --hover:#E5F1FB; --work:#C9DEEB; --pane:#E8E8E8;
+  --ui:"Segoe UI",Tahoma,Arial,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:#6E7B86;font-family:var(--ui);font-size:13px;color:var(--ink);display:flex}
+.app{flex:1;display:flex;flex-direction:column;background:var(--chrome);border:1px solid #888;min-width:0}
+.titlebar{display:flex;align-items:center;height:30px;padding-left:8px;background:#fff;user-select:none}
+.titlebar .t{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.titlebar .ico{width:14px;height:14px;margin-right:6px;background:var(--accent);clip-path:polygon(0 0,100% 50%,0 100%)}
+.winbtn{width:44px;height:30px;border:0;background:none;font:inherit;font-size:14px;cursor:pointer}
+.winbtn:hover{background:#E5E5E5}.winbtn.x:hover{background:#E81123;color:#fff}
+.menubar{display:flex;background:#fff;position:relative;z-index:5}
+.menu{position:relative}
+.menu>button{border:0;background:none;font:inherit;padding:3px 9px;cursor:pointer}
+.menu>button:hover,.menu.open>button{background:var(--hover);outline:1px solid #CCE4F7}
+.drop{display:none;position:absolute;top:100%;left:0;min-width:190px;background:#F9F9F9;border:1px solid #A0A0A0;box-shadow:2px 2px 4px #0003;padding:2px 0}
+.menu.open .drop{display:block}
+.drop button{display:block;width:100%;text-align:left;border:0;background:none;font:inherit;padding:4px 24px;cursor:pointer}
+.drop button:hover{background:var(--select)}
+.drop hr{border:0;border-top:1px solid #D0D0D0;margin:3px 0}
+.toolbar{display:flex;align-items:center;gap:4px;padding:5px 6px;border-bottom:3px solid var(--accent)}
+.tb{width:26px;height:24px;border:1px solid transparent;background:none;border-radius:2px;cursor:pointer;display:grid;place-items:center;padding:0}
+.tb:hover{background:var(--hover);border-color:#99C9EF}
+.tb svg{width:17px;height:17px;fill:#3D3D3D}
+.sep{width:14px}
+.search{flex:1;display:flex;align-items:center;gap:6px;margin-left:16px;max-width:1080px}
+.search input{flex:1;height:26px;border:1px solid #9A9A9A;padding:0 6px;font:inherit;min-width:0}
+.search input:focus{outline:1px solid #0078D7;border-color:#0078D7}
+.brand{margin-left:auto;padding:0 10px 0 20px;font-weight:700;font-size:20px;letter-spacing:.06em;color:#3B3B3B}
+.body{flex:1;display:flex;min-height:0}
+.left{width:310px;background:var(--pane);border-right:4px solid #CFCFCF;display:flex;flex-direction:column;min-width:0}
+.filters{display:flex;gap:6px;padding:6px;border-bottom:1px solid var(--line)}
+.filters select{font:inherit;height:24px}
+.refresh{width:26px;height:24px;border:1px solid #9A9A9A;background:#fff;cursor:pointer;font-size:15px;line-height:1}
+.refresh:hover{background:var(--hover)}
+.tree{list-style:none;margin:0;padding:6px 0;overflow:auto;flex:1}
+.tree ul{list-style:none;margin:0;padding:0}
+.node{display:flex;align-items:center;gap:5px;height:24px;padding-right:8px;cursor:default;white-space:nowrap;user-select:none}
+.node:hover{background:var(--hover)}
+.node.sel{background:var(--select)}
+.node:focus-visible{outline:1px dotted #000}
+.tw{width:14px;text-align:center;color:var(--muted);font-size:10px;cursor:pointer}
+.icon{width:16px;height:16px;flex:none}
+.empty{color:var(--muted);font-style:italic}
+.work{flex:1;background:var(--work);position:relative;overflow:hidden}
+.child{position:absolute;top:30px;left:40px;width:min(520px,calc(100% - 60px));background:var(--chrome);border:1px solid #7A7A7A;box-shadow:3px 3px 8px #0004}
+.child .titlebar{height:28px}
+.child .content{padding:16px;line-height:1.5}
+.child .content p{margin:0 0 10px}
+.child .ok{float:right;font:inherit;padding:3px 18px;border:1px solid #0078D7;background:#E1E1E1;cursor:pointer}
+.work{overflow:auto}
+.nb{position:absolute;top:6px;left:10px;width:min(1040px,calc(100% - 20px));background:#E3EEF3;border:1px solid #7A7A7A;box-shadow:3px 3px 8px #0004;display:flex;flex-direction:column;min-width:720px}
+.nb>.titlebar{background:#fff;cursor:move;height:28px}
+.nb .menubar{background:#E3EEF3}
+.nb .menu>button{padding:3px 8px}
+.tabs{display:flex;flex-wrap:wrap;gap:0 2px;padding:2px 6px;border-bottom:1px solid #9FB3BF}
+.tabs button{border:1px solid transparent;background:none;font:inherit;font-size:12.5px;padding:2px 7px;cursor:pointer}
+.tabs button:hover{border-color:#99C9EF;background:var(--hover)}
+.tabs button.on{background:#fff;border-color:#9FB3BF #9FB3BF #fff;font-weight:600}
+.pane{padding:12px 18px 8px;min-height:560px}
+.grp{border:1px solid #C3D3DC;padding:8px 10px;display:flex;flex-direction:column;gap:6px}
+.grp-t{font-weight:600}
+.hint{color:var(--muted)}
+.btn95{font:inherit;padding:3px 12px;background:#E1E1E1;border:1px solid #ADADAD;cursor:pointer;min-width:110px}
+.btn95:hover:not(:disabled){background:#E5F1FB;border-color:#0078D7}
+.btn95:disabled{color:#A0A0A0;cursor:default;background:#D9DFE2;border-color:#C6CDD1}
+.bdtop{display:grid;grid-template-columns:minmax(0,1fr) 130px;gap:10px;margin-top:4px}
+.grid{width:100%;border-collapse:collapse;background:#fff;border:1px solid #9A9A9A;font-size:12.5px}
+.grid th{background:#F3F3F3;border-bottom:1px solid #9A9A9A;text-align:left;padding:2px 8px;font-weight:500}
+.grid td{padding:2px 8px;height:22px}
+.grid tr.row{cursor:default}.grid tr.row:hover td{background:var(--hover)}.grid tr.row.sel td{background:var(--select)}
+.side{display:flex;flex-direction:column;gap:8px}
+.form{display:grid;grid-template-columns:150px minmax(0,1fr) 170px minmax(0,1fr);gap:8px 10px;align-items:center;margin-top:14px}
+.form label,.lbl{text-align:right}
+.fld{font:inherit;height:24px;border:1px solid #9A9A9A;background:#fff;padding:0 6px;width:100%}
+.fld[readonly]{background:#F4F4F4}
+.fld.num{text-align:right}
+.fld.err{border-color:#C42B1C;background:#FDE7E9}
+.ro{padding:0 6px}
+.chk{display:flex;align-items:center;gap:6px}
+.amts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+.amts .grp{display:grid;grid-template-columns:150px minmax(0,1fr);gap:8px 10px;align-items:center}
+.amts .grp-t{grid-column:1/-1}
+.amts .v{text-align:right;padding-right:6px;font-variant-numeric:tabular-nums}
+.nbfoot{display:flex;align-items:center;gap:10px;padding:6px 10px;border-top:1px solid #C3D3DC}
+.mode{font:inherit;padding:4px 14px;min-width:300px;background:#E1E1E1;border:1px solid #ADADAD;color:#3B2BA6;cursor:pointer}
+.mode.upd{color:#B0001E}
+.mode:hover{border-color:#0078D7}
+.placeholder{padding:40px;color:var(--muted);text-align:center}
+.modal{position:fixed;inset:0;background:#0002;display:grid;place-items:center;z-index:20}
+.modal .box{background:var(--chrome);border:1px solid #7A7A7A;box-shadow:3px 3px 10px #0005;width:min(380px,90vw)}
+.modal .content{padding:16px;display:flex;gap:12px;align-items:flex-start}
+.modal .warn{flex:none;width:28px;height:28px;background:#F7C600;clip-path:polygon(50% 0,100% 100%,0 100%);display:grid;place-items:end center;font-weight:700;font-size:15px}
+.modal .acts{display:flex;justify-content:flex-end;padding:0 16px 14px}
+.status{display:grid;grid-template-columns:1.6fr 1fr .9fr .9fr .6fr;border-top:1px solid var(--line);background:var(--chrome);font-size:12px}
+.status div{padding:3px 10px;border-left:1px solid var(--line);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status div:first-child{border-left:0}
+.status button{border:0;background:none;font:inherit;cursor:pointer;padding:0}
+.status button:hover{text-decoration:underline}
+.toast{position:fixed;bottom:34px;right:16px;background:#FFFFE1;border:1px solid #767676;padding:6px 10px;box-shadow:2px 2px 4px #0003;font-size:12px;display:none;max-width:360px}
+@media (max-width:700px){.left{width:220px}.brand{display:none}.status{grid-template-columns:1fr 1fr}.status div:nth-child(n+3){display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="titlebar">
+    <span class="ico"></span>
+    <span class="t">Simulator - TRAINING - Business Date: 11-Mar-2025</span>
+    <button class="winbtn" data-msg="Minimize is disabled in the simulator." aria-label="Minimize">&#8211;</button>
+    <button class="winbtn" data-msg="Maximize is disabled in the simulator." aria-label="Maximize">&#9633;</button>
+    <button class="winbtn x" data-msg="Closing is disabled in the simulator." aria-label="Close">&#10005;</button>
+  </div>
+
+  <nav class="menubar" id="menubar">
+    <div class="menu"><button>File</button><div class="drop">
+      <button data-msg="Open: select a deal in the tree and double-click it.">Open...</button><hr>
+      <button data-msg="Exit is disabled in the simulator.">Exit</button></div></div>
+    <div class="menu"><button>Options</button><div class="drop">
+      <button data-msg="Not part of this scenario yet.">Preferences...</button></div></div>
+    <div class="menu"><button>Windows</button><div class="drop" id="winMenu">
+      <button data-msg="No window open.">(no open windows)</button></div></div>
+    <div class="menu"><button>Help</button><div class="drop">
+      <button data-msg="Simulator: training environment with fictitious data.">About Simulator</button></div></div>
+  </nav>
+
+  <div class="toolbar">
+    <button class="tb" title="Actions" data-msg="Actions: not part of this scenario yet."><svg viewBox="0 0 16 16"><path d="M2 4h8v2H2zm0 4h12v2H2zm0 4h6v2H2z"/></svg></button>
+    <button class="tb" title="Hierarchy" data-msg="Hierarchy: not part of this scenario yet."><svg viewBox="0 0 16 16"><path d="M1 2h5v4H1zm9 0h5v4h-5zM3 6h1v4h6v1H3zm7 3h5v4h-5z"/></svg></button>
+    <button class="tb" title="History" data-msg="History: not part of this scenario yet."><svg viewBox="0 0 16 16"><path d="M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1zm0 2a5 5 0 1 0 0 10A5 5 0 0 0 8 3zm-.7 1.5h1.4v3.2l2.3 1.4-.7 1.2-3-1.8z"/></svg></button>
+    <button class="tb" title="Home" data-msg="Home: you are on the main screen."><svg viewBox="0 0 16 16"><path d="M8 1l7 6h-2v8H9v-5H7v5H3V7H1z"/></svg></button>
+    <button class="tb" title="Work in Process" data-msg="Work in Process: not part of this scenario yet."><svg viewBox="0 0 16 16"><path d="M5 2h6v2h4v10H1V4h4zm1 1v1h4V3z"/></svg></button>
+    <span class="sep"></span>
+    <button class="tb" title="Alerts" data-msg="No alerts."><svg viewBox="0 0 16 16"><path d="M8 1l7.5 14H.5zm-.8 5v4h1.6V6zm0 5v1.6h1.6V11z"/></svg></button>
+    <button class="tb" title="Reports" data-msg="Reports: not part of this scenario yet."><svg viewBox="0 0 16 16"><path d="M1 14h14v1H1zM2 8h3v5H2zm4-3h3v8H6zm4-3h3v11h-3z"/></svg></button>
+    <div class="search">
+      <input id="search" placeholder="" aria-label="Search">
+      <button class="tb" id="searchBtn" title="Search"><svg viewBox="0 0 16 16"><path d="M10 1a5 5 0 1 1-3.2 8.8L2.4 14.2 1 12.8l4.4-4.4A5 5 0 0 1 10 1zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg></button>
+    </div>
+    <span class="brand">SIMULATOR</span>
+  </div>
+
+  <div class="body">
+    <aside class="left">
+      <div class="filters">
+        <select id="filter" aria-label="Filter"><option>All</option><option>Deals</option><option>Customers</option></select>
+        <select id="order" aria-label="Sort order"><option>Ascending</option><option>Descending</option></select>
+        <button class="refresh" id="refresh" title="Refresh">&#8635;</button>
+      </div>
+      <ul class="tree" id="tree"></ul>
+    </aside>
+    <section class="work" id="work"></section>
+  </div>
+
+  <footer class="status">
+    <div>Last Successful Login: 2025-03-11 08:44:55</div>
+    <div></div>
+    <div><button data-msg="Process List: no process running.">Process List</button></div>
+    <div>TRAIN01</div>
+    <div>11-Mar-2025</div>
+  </footer>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const icons={
+  folder:'<svg class="icon" viewBox="0 0 16 16"><path fill="#4A5A8C" d="M1 3h5l1 2h8v9H1z"/></svg>',
+  deal:'<svg class="icon" viewBox="0 0 16 16"><path fill="#4A5A8C" d="M1 7l3-3 4 2 4-2 3 3-4 4-1-1-2 2-2-2-1 1z"/></svg>',
+  customer:'<svg class="icon" viewBox="0 0 16 16"><circle cx="8" cy="5" r="3" fill="#4A5A8C"/><path fill="#4A5A8C" d="M2 15c0-4 3-6 6-6s6 2 6 6z"/></svg>'
+};
+const items=[{name:'Deal1',type:'deal'},{name:'Deal2',type:'customer'},{name:'Deal3',type:'deal'}];
+let favOpen=true,myOpen=false,selected='Deal1';
+
+const toastEl=document.getElementById('toast');let tt;
+function toast(m){toastEl.textContent=m;toastEl.style.display='block';clearTimeout(tt);tt=setTimeout(()=>toastEl.style.display='none',2600)}
+
+function renderTree(){
+  const f=document.getElementById('filter').value, desc=document.getElementById('order').value==='Descending';
+  let list=items.filter(i=>f==='All'||(f==='Deals'&&i.type==='deal')||(f==='Customers'&&i.type==='customer'));
+  list.sort((a,b)=>desc?b.name.localeCompare(a.name):a.name.localeCompare(b.name));
+  const tree=document.getElementById('tree');
+  tree.innerHTML=`
+   <li><div class="node" style="padding-left:6px"><span class="tw" data-t="fav">${favOpen?'&#9660;':'&#9654;'}</span>${icons.folder}<span>[Favorites]</span></div>
+   ${favOpen?`<ul>
+     <li><div class="node" style="padding-left:24px"><span class="tw" data-t="my">${myOpen?'&#9660;':'&#9654;'}</span>${icons.folder}<span>MY DEALS</span></div>
+       ${myOpen?'<div class="node empty" style="padding-left:60px">(no items)</div>':''}</li>
+     ${list.map(i=>`<li><div class="node${i.name===selected?' sel':''}" tabindex="0" data-name="${i.name}" style="padding-left:42px">${icons[i.type]}<span>${i.name}</span></div></li>`).join('')}
+   </ul>`:''}</li>`;
+  tree.querySelectorAll('[data-t]').forEach(t=>t.onclick=()=>{t.dataset.t==='fav'?favOpen=!favOpen:myOpen=!myOpen;renderTree()});
+  tree.querySelectorAll('[data-name]').forEach(n=>{
+    n.onclick=()=>{selected=n.dataset.name;renderTree();tree.querySelector(`[data-name="${selected}"]`).focus()};
+    n.ondblclick=()=>openItem(n.dataset.name);
+    n.onkeydown=e=>{if(e.key==='Enter')openItem(n.dataset.name)};
+  });
+}
+
+// ---------- Deal Notebook ----------
+const DEALS={
+  Deal1:{borrower:'Borrower1',alias:'Borrower1 Alias',agent:'Admin1',classif:'Classification1',ccy:'EUR',proposed:10000000},
+  Deal2:{borrower:'Borrower2',alias:'Borrower2 Alias',agent:'Admin2',classif:'Classification2',ccy:'EUR',proposed:25000000},
+  Deal3:{borrower:'Borrower3',alias:'Borrower3 Alias',agent:'Admin3',classif:'Classification3',ccy:'EUR',proposed:5000000},
+};
+const TABS1=['Admin/Event Fees','Fees','Bank Roles','Ratios/Conds','Pricing Rules'];
+const TABS2=['Summary','Personnel','Risk/Regulatory','Workflow','Pending','Other Products','Events','Comments','Restrictions','MIS Codes','Additional','Calendars','Pricing Comment'];
+const NBMENU={File:['Save','Exit'],Options:['Refresh'],Status:['Close Deal...'],Queries:['Transaction History'],Distribution:['Lender Shares'],Accounting:['GL Entries'],Payments:['Pending Payments']};
+let nb=null; // {name, tab, update}
+const money=n=>Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const parseMoney=s=>{const t=String(s).replace(/,/g,'').trim();return /^\d+(\.\d{0,2})?$/.test(t)?Number(t):NaN};
+
+function warn(msg,after){
+  const m=document.createElement('div');m.className='modal';
+  m.innerHTML=`<div class="box" role="alertdialog"><div class="titlebar"><span class="ico"></span><span class="t">Warning</span></div>
+   <div class="content"><span class="warn">!</span><div>${msg}</div></div><div class="acts"><button class="btn95" id="wOk">OK</button></div></div>`;
+  document.body.appendChild(m);const ok=m.querySelector('#wOk');ok.focus();
+  ok.onclick=()=>{m.remove();after&&after()};
+}
+
+function summaryPane(d,u){
+  const dis=u?'':'disabled', ro=u?'':'readonly';
+  return `<div class="grp"><span class="grp-t">Borrowers / Depositors</span>
+   <div class="bdtop"><div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span class="hint">Drill down to view details</span><button class="btn95" ${dis} data-nb="Make Primary: ${d.borrower} is already the primary borrower.">Make Primary</button></div>
+    <table class="grid"><tr><th style="width:14px"></th><th>Name</th><th>Borrower</th><th>Depositor</th></tr>
+     <tr class="row sel" id="bRow" title="Double-click to view details"><td>&bull;</td><td>${d.borrower}</td><td>Y</td><td>N</td></tr><tr><td colspan="4"></td></tr><tr><td colspan="4"></td></tr></table></div>
+    <div class="side" style="padding-top:26px"><button class="btn95" ${dis} data-nb="Add borrower: not part of this scenario yet.">Add</button><button class="btn95" ${dis} data-nb="Delete: a deal must keep at least one borrower.">Delete</button></div></div></div>
+  <div class="form">
+   <span class="lbl">Alias:</span><span class="ro">${d.alias}</span><span></span><span></span>
+   <button class="btn95" ${dis} data-nb="Deal Classification: list not part of this scenario yet." style="justify-self:end">Deal Classification</button><input class="fld" id="nbClass" value="${d.classif}" ${ro}>
+   <span></span><label class="chk"><input type="checkbox" id="nbSole" ${dis}> Sole Lender</label>
+   <button class="btn95" ${dis} data-nb="Admin Agent: selection list not part of this scenario yet." style="justify-self:end">Admin Agent</button><input class="fld" id="nbAgent" value="${d.agent}" ${ro} style="grid-column:span 2"><span></span>
+   <label for="nbClosed">Closed Date:</label><input class="fld" id="nbClosed" style="width:140px" ${ro} placeholder="${u?'DD-Mon-YYYY':''}">
+   <label for="nbProj">Projected Close Date:</label><input class="fld" id="nbProj" style="width:140px" value="11-Mar-2025" ${ro}>
+   <label for="nbAgr">Agreement Date:</label><input class="fld" id="nbAgr" style="width:140px" ${ro} placeholder="${u?'DD-Mon-YYYY':''}"><span></span><span></span>
+   <span class="lbl">Currency:</span><span class="ro">${d.ccy}</span>
+   <button class="btn95" disabled style="justify-self:end">ISIN/CUSIP</button>
+   <span style="display:flex;gap:6px;align-items:center"><input class="fld" aria-label="ISIN" placeholder="ISIN" ${ro}><input class="fld" aria-label="CUSIP" placeholder="CUSIP" ${ro}><label class="chk"><input type="checkbox" ${dis}> Unlisted</label></span>
+   <label for="nbCutoff">Facility Add Cutoff Date:</label><input class="fld" id="nbCutoff" style="width:140px" ${ro} placeholder="${u?'DD-Mon-YYYY':''}"><span></span><span></span>
+  </div>
+  <div class="amts">
+   <div class="grp"><span class="grp-t">Global Deal Amounts</span>
+    <label for="nbProp">Proposed Cmt:</label><input class="fld num" id="nbProp" value="${money(d.proposed)}" ${ro}>
+    <span class="lbl">Closing Cmt:</span><span class="v" id="nbClosing">${money(d.proposed)}</span>
+    <span class="lbl">Current Cmt:</span><span class="v"></span></div>
+   <div class="grp"><span class="grp-t">Host Bank Share Amounts</span>
+    <span class="lbl">Proposed Cmt:</span><span class="v">0.00</span>
+    <span class="lbl">Closing Cmt:</span><span class="v">0.00</span>
+    <span class="lbl">Contr. Gross:</span><span class="v"></span>
+    <span class="lbl">Net Cmt:</span><span class="v"></span></div>
+  </div>`;
+}
+
+function renderNotebook(){
+  const work=document.getElementById('work');
+  if(!nb){work.innerHTML='';return}
+  const d=DEALS[nb.name];
+  const pane=nb.tab==='Summary'?summaryPane(d,nb.update):`<div class="placeholder">The <b>${nb.tab}</b> tab is not part of this scenario yet.</div>`;
+  work.innerHTML=`<div class="nb" id="nbWin" role="dialog" aria-label="Deal Notebook ${nb.name}">
+   <div class="titlebar" id="nbBar"><span class="ico"></span><span class="t">Deal Notebook - Pending Deal - ${nb.name}</span><button class="winbtn x" id="nbClose" aria-label="Close">&#10005;</button></div>
+   <nav class="menubar">${Object.entries(NBMENU).map(([k,v])=>`<div class="menu"><button>${k}</button><div class="drop">${v.map(x=>`<button data-nbm="${x}">${x}</button>`).join('')}</div></div>`).join('')}</nav>
+   <div class="tabs">${TABS1.map(t=>`<button data-tab="${t}" class="${t===nb.tab?'on':''}">${t}</button>`).join('')}</div>
+   <div class="tabs">${TABS2.map(t=>`<button data-tab="${t}" class="${t===nb.tab?'on':''}">${t}</button>`).join('')}</div>
+   <div class="pane">${pane}</div>
+   <div class="nbfoot"><button class="mode ${nb.update?'upd':''}" id="nbMode">Notebook in ${nb.update?'Update':'Inquiry'} Mode - F7</button><span>-- Deal Notebook</span></div></div>`;
+  const win=document.getElementById('nbWin');
+  document.getElementById('nbClose').onclick=closeNotebook;
+  document.getElementById('nbMode').onclick=toggleMode;
+  win.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{nb.tab=b.dataset.tab;renderNotebook()});
+  win.querySelectorAll('.menu>button').forEach(b=>b.onclick=e=>{e.stopPropagation();const m=b.parentElement,o=m.classList.contains('open');closeMenus();if(!o)m.classList.add('open')});
+  win.querySelectorAll('[data-nbm]').forEach(b=>b.onclick=e=>{e.stopPropagation();closeMenus();const a=b.dataset.nbm;
+    if(a==='Exit')closeNotebook();else if(a==='Save')nb.update?toast('Deal saved.'):toast('Nothing to save: notebook is in Inquiry Mode.');else toast(a+': not part of this scenario yet.')});
+  win.querySelectorAll('[data-nb]').forEach(b=>b.onclick=()=>toast(b.dataset.nb));
+  const row=document.getElementById('bRow');if(row)row.ondblclick=()=>toast(`${d.borrower}: borrower details screen not built yet.`);
+  const prop=document.getElementById('nbProp');
+  if(prop&&nb.update){
+    prop.onfocus=()=>prop.select();
+    prop.onchange=()=>{const v=parseMoney(prop.value);
+      if(isNaN(v)||v<=0){prop.classList.add('err');warn('Proposed Cmt must be a positive amount with up to 2 decimals.',()=>{prop.value=money(d.proposed);prop.classList.remove('err');prop.focus()});return}
+      prop.classList.remove('err');d.proposed=v;prop.value=money(v);document.getElementById('nbClosing').textContent=money(v)};
+  }
+  // drag window by its title bar
+  const bar=document.getElementById('nbBar');bar.onmousedown=e=>{if(e.target.closest('button'))return;const sx=e.clientX-win.offsetLeft,sy=e.clientY-win.offsetTop;
+    const mv=ev=>{win.style.left=Math.max(0,ev.clientX-sx)+'px';win.style.top=Math.max(0,ev.clientY-sy)+'px'};
+    const up=()=>{document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up)};
+    document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up)};
+}
+
+function toggleMode(){if(!nb)return;nb.update=!nb.update;renderNotebook();toast(nb.update?'Update Mode: fields can now be edited.':'Inquiry Mode: read only.')}
+document.addEventListener('keydown',e=>{if(e.key==='F7'&&nb){e.preventDefault();toggleMode()}});
+
+function closeNotebook(){nb=null;renderNotebook();document.getElementById('winMenu').innerHTML='<button data-msg="No window open.">(no open windows)</button>';bindMsgs()}
+
+function openItem(name){
+  if(nb&&nb.name===name){toast(name+' is already open.');return}
+  nb={name,tab:'Summary',update:false};renderNotebook();
+  document.getElementById('winMenu').innerHTML=`<button id="winItem">1 Deal Notebook - ${name}</button>`;
+  document.getElementById('winItem').onclick=()=>toast(name+' is already open.');
+}
+
+function doSearch(){
+  const q=document.getElementById('search').value.trim().toLowerCase();
+  if(!q){toast('Enter a deal or customer name to search.');return}
+  const hit=items.find(i=>i.name.toLowerCase().includes(q));
+  if(!hit){toast(`No match found for "${document.getElementById('search').value.trim()}".`);return}
+  favOpen=true;selected=hit.name;renderTree();openItem(hit.name);
+}
+
+function bindMsgs(){document.querySelectorAll('[data-msg]').forEach(b=>b.onclick=e=>{e.stopPropagation();closeMenus();toast(b.dataset.msg)})}
+function closeMenus(){document.querySelectorAll('.menu.open').forEach(m=>m.classList.remove('open'))}
+document.querySelectorAll('.menu>button').forEach(b=>b.onclick=e=>{e.stopPropagation();const m=b.parentElement,o=m.classList.contains('open');closeMenus();if(!o)m.classList.add('open')});
+document.addEventListener('click',closeMenus);
+document.getElementById('searchBtn').onclick=doSearch;
+document.getElementById('search').onkeydown=e=>{if(e.key==='Enter')doSearch()};
+document.getElementById('filter').onchange=renderTree;
+document.getElementById('order').onchange=renderTree;
+document.getElementById('refresh').onclick=()=>{renderTree();toast('List refreshed.')};
+renderTree();bindMsgs();
+</script>
+</body>
+</html>
