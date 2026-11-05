@@ -1,0 +1,32 @@
+PP_TERM_RE = re.compile(r"\[\s*\(in the case of a Term Rate Loan\)\s*\]\s*", re.I)
+PP_COMP_RE = re.compile(r"\[\s*,\s*and in the case of a Compounded Rate Loan.*?in any year\s*,\s*\]", re.I)
+PP_MULT_RE = re.compile(r"\s*\[\s*provided that such prepayment must be in multiples of.*?the relevant Facility", re.I)
+
+def process_prepayment(doc, term, comp, mult, mini):
+    # 4(c) : options Term Rate / Compounded Rate + multiples / minimum
+    mult, mini = mult.strip(), mini.strip()
+    amt = (f"in multiples of {mult}" + (f" (or at least {mini})" if mini else "")) if mult else (f"at least {mini}" if mini else "")
+    for p in _iter_all_paragraphs(doc):
+        if "may prepay outstanding funded drawings" not in p.text.lower(): continue
+        regex_sub_in_paragraph(p, PP_TERM_RE, "(in the case of a Term Rate Loan) " if term else "")
+        regex_sub_in_paragraph(p, PP_COMP_RE, ", and in the case of a Compounded Rate Loan, not more than 3 voluntary prepayments in aggregate being made in any year," if comp else "")
+        regex_sub_in_paragraph(p, PP_MULT_RE, f" provided that such prepayment must be {amt} or (if less) the balance outstanding under the relevant Facility" if amt else "")
+
+
+haja
+        self.pp_term, self.pp_comp, self.pp_mult, self.pp_min = tk.BooleanVar(), tk.BooleanVar(), StringVar(), StringVar()
+        self.pp_box = ttk.Frame(root, style="Card.TFrame", padding=(12, 4))
+        ttk.Checkbutton(self.pp_box, text="Term Rate Loan", variable=self.pp_term).pack(anchor="w")
+        ttk.Checkbutton(self.pp_box, text="Compounded Rate Loan", variable=self.pp_comp).pack(anchor="w")
+        for lab, v in (("Multiples of :", self.pp_mult), ("Minimum :", self.pp_min)):
+            r = ttk.Frame(self.pp_box); r.pack(fill="x"); ttk.Label(r, text=lab, width=14).pack(side="left"); ttk.Entry(r, textvariable=v).pack(side="left", fill="x", expand=True)
+        #self.prepay_var.trace_add("write", lambda *_: self.pp_box.pack(fill="x", padx=12, pady=(4, 0), after=prepay_frame) if str(self.prepay_var.get()).lower() in ("yes", "1", "true") else self.pp_box.pack_forget())
+        show_pp = lambda *_: self.pp_box.pack_forget() if self.prepay_var.get() else self.pp_box.pack(fill="x", padx=12, pady=(4, 0), after=prepay_frame)
+        self.prepay_var.trace_add("write", show_pp); show_pp()
+
+haja
+            if not self.prepay_var.get():
+                process_prepayment(doc, self.pp_term.get(), self.pp_comp.get(), self.pp_mult.get(), self.pp_min.get())
+
+            if str(self.prepay_var.get()).lower() in ("yes", "1", "true"):
+                process_prepayment(doc, self.pp_term.get(), self.pp_comp.get(), self.pp_mult.get(), self.pp_min.get())
