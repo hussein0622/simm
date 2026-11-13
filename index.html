@@ -1,0 +1,2029 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BNPP Simulator</title>
+<style>
+:root{
+  --g:#00915A;        /* bank green */
+  --gd:#006A43;       /* dark green */
+  --gdd:#0B3B2A;      /* deep green */
+  --gl:#7CC9A6;       /* light green */
+  --gp:#E7F4EE;       /* pale green */
+  --ink:#121212;      /* black */
+  --mut:#5B6560;
+  --line:#DDE4E0;
+  --bg:#F5F7F6;
+  --amber:#F5B400;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 "Segoe UI",system-ui,-apple-system,sans-serif}
+a{color:inherit}
+button{font-family:inherit}
+.wrap{max-width:1140px;margin:0 auto;padding:0 20px}
+.kicker{font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--gl)}
+
+/* ---------- top bar ---------- */
+.top{background:var(--ink);color:#fff;position:sticky;top:0;z-index:100}
+.top-in{display:flex;align-items:center;gap:24px;height:58px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-size:18px;letter-spacing:.02em}
+.brand b{font-weight:800}
+.crumbs{display:flex;gap:8px;font-size:14px;color:#b9c4bf;flex-wrap:wrap}
+.crumbs a{text-decoration:none;color:#fff}
+.crumbs a:hover{color:var(--gl)}
+
+/* ---------- home ---------- */
+.hero{background:linear-gradient(120deg,var(--gdd),var(--gd) 55%,var(--g));color:#fff;padding:56px 0 64px}
+.hero h1{font-size:40px;line-height:1.15;margin:8px 0 12px;font-weight:800}
+.hero p{max-width:640px;margin:0;color:#dcefe6;font-size:17px}
+.h2{font-size:22px;margin:40px 0 16px;font-weight:800}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px;padding-bottom:60px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:10px;transition:.15s}
+.card.on{cursor:pointer}
+.card.on:hover{border-color:var(--g);box-shadow:0 8px 24px rgba(0,106,67,.12);transform:translateY(-2px)}
+.card .num{width:40px;height:40px;border-radius:10px;background:var(--gp);color:var(--gd);display:grid;place-items:center;font-weight:800}
+.card.off{opacity:.6}
+.card.off .num{background:#eceeed;color:#888}
+.card h3{margin:0;font-size:18px}
+.card p{margin:0;color:var(--mut);font-size:14px;flex:1}
+.prog{height:6px;background:#e9eeeb;border-radius:9px;overflow:hidden}
+.prog div{height:100%;background:var(--g)}
+.card .meta{font-size:12.5px;color:var(--mut);display:flex;justify-content:space-between}
+.tag{font-size:12px;font-weight:700;color:#888;background:#eee;border-radius:20px;padding:2px 10px;align-self:flex-start}
+
+/* ---------- module ---------- */
+.mod-hero{background:var(--gdd);color:#fff;padding:34px 0 38px}
+.mod-hero h1{margin:6px 0 6px;font-size:32px;font-weight:800}
+.mod-hero p{margin:0;color:#cfe5da}
+.mod-layout{display:grid;grid-template-columns:250px 1fr;gap:28px;padding-top:28px;padding-bottom:70px;align-items:start}
+.toc{position:sticky;top:78px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px}
+.toc-h{font-size:12px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
+.toc a{display:block;padding:8px 10px;border-radius:8px;cursor:pointer;text-decoration:none;font-weight:600;font-size:14px;line-height:1.35}
+.toc a small{display:block;font-weight:500;color:var(--mut);font-size:12px}
+.toc a:hover{background:var(--gp)}
+.toc a.ph{color:#999}
+.ok{color:var(--g);font-weight:800}
+.lesson{background:#fff;border:1px solid var(--line);border-radius:14px;padding:38px 44px;margin-bottom:28px;scroll-margin-top:78px}
+.lesson-kicker{font-size:12px;font-style:italic;color:var(--mut)}
+.lesson h2{font-size:32px;line-height:1.2;margin:6px 0 16px;font-weight:800}
+.bar{width:110px;height:5px;background:var(--g);border-radius:3px;margin-bottom:28px}
+.prose p{margin:0 0 16px}
+.split{display:grid;grid-template-columns:minmax(260px,1fr) 1fr;gap:28px;align-items:center;margin:26px 0}
+.figure{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:16px}
+.figure svg{width:100%;height:auto;display:block}
+.figcap{font-size:12.5px;color:var(--mut);margin-top:6px;text-align:center}
+.band{background:#F0F2F1;margin:34px -44px 22px;padding:22px 44px 18px;font-size:22px;font-weight:800}
+.band:before{content:"";display:block;width:52px;height:4px;background:var(--g);margin-bottom:12px;border-radius:2px}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0}
+.mode{border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;gap:12px;align-items:center}
+.mode .ic{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:#eceeed;font-size:18px}
+.mode.upd{border-color:var(--gl);background:var(--gp)}
+.mode.upd .ic{background:var(--g);color:#fff}
+.mode b{display:block}
+.mode span{font-size:13.5px;color:var(--mut)}
+table.t{width:100%;border-collapse:collapse;font-size:14px;margin:8px 0 6px}
+.t th{background:var(--g);color:#fff;text-align:left;padding:9px 12px;font-weight:700}
+.t td{border-bottom:1px solid var(--line);padding:9px 12px;vertical-align:top}
+.t td:first-child{font-weight:600;white-space:nowrap}
+.badge{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--ink);color:#fff;font-size:11px;font-weight:700;margin-right:8px}
+
+/* notebook schema */
+.ns{max-width:520px;margin:20px auto 8px;border:1px solid #9aa;background:#fff;font:12px "Segoe UI",sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.08)}
+.ns > div{position:relative;padding:5px 8px;border-bottom:1px solid #e3e3e3}
+.ns .nb{position:absolute;right:-30px;top:50%;transform:translateY(-50%)}
+.ns .nb .badge{margin:0}
+.ns-tabs span{display:inline-block;border:1px solid #ccc;padding:0 6px;margin-right:2px;background:#f3f3f3}
+.ns-tabs span.on{background:#fff;font-weight:700}
+.ns-body{height:70px;background:repeating-linear-gradient(#fff 0 14px,#f2f4f3 14px 16px)}
+.ns-mode{display:inline-block;border:1px solid #999;background:#e1e1e1;padding:1px 14px}
+
+/* profiles */
+.pcards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0}
+.pcard{border:1px solid var(--line);border-top:4px solid var(--g);border-radius:10px;padding:12px 14px}
+.pcard b{display:block;margin-bottom:2px}
+.pcard span{font-size:13px;color:var(--mut);line-height:1.45;display:block}
+ol.big{padding-left:22px}
+ol.big li{margin:6px 0}
+.note{background:var(--gp);border-left:4px solid var(--g);padding:12px 16px;border-radius:0 10px 10px 0;font-size:14px;margin:16px 0}
+.steps{list-style:none;padding:0;margin:8px 0 22px}
+.steps li{display:flex;align-items:center;gap:18px;margin:10px 0}
+.num-dot{width:30px;height:30px;border-radius:50%;background:var(--g);color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:14px 0}
+.fnode{background:var(--ink);color:#fff;border-radius:8px;padding:8px 12px;font-weight:700;font-size:13.5px}
+.fnode.g{background:var(--g)}
+.farrow{font-size:12px;color:var(--mut);display:flex;align-items:center;gap:4px}
+.farrow:after{content:"→";font-size:18px;color:var(--g)}
+
+/* quiz */
+.quiz{border:1px dashed var(--gl);border-radius:12px;padding:18px 22px;margin:30px 0 22px}
+.quiz-h{font-weight:800;margin-bottom:8px}
+.q{margin:14px 0}
+.q p{margin:0 0 8px;font-weight:600}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{border:1px solid var(--line);background:#fff;border-radius:20px;padding:6px 14px;cursor:pointer;font-size:14px}
+.opt:hover{border-color:var(--g)}
+.opt.right{background:var(--g);border-color:var(--g);color:#fff}
+.opt.wrong{background:#fbe9e9;border-color:#d66;color:#a22}
+.fb{font-size:13.5px;margin-top:6px;color:var(--gd)}
+
+/* launch */
+.launch{background:var(--ink);color:#fff;border-radius:14px;padding:22px 26px;display:flex;gap:20px;align-items:center;justify-content:space-between;margin-top:26px}
+.launch h4{margin:4px 0;font-size:18px}
+.launch p{margin:0;color:#c3cbc7;font-size:14px}
+.btn-launch{background:var(--g);color:#fff;text-decoration:none;font-weight:800;padding:12px 26px;border-radius:30px;white-space:nowrap;font-size:16px;transition:.15s}
+.btn-launch:hover{background:var(--gl);color:var(--ink)}
+.done-tag{color:var(--gl);font-size:13px;font-weight:700}
+.placeholder{color:var(--mut)}
+
+@media (max-width:860px){
+  .mod-layout{grid-template-columns:1fr}
+  .toc{position:static}
+  .lesson{padding:24px 18px}
+  .band{margin:30px -18px 20px;padding:20px 18px 16px}
+  .split{grid-template-columns:1fr}
+  .pcards{grid-template-columns:1fr 1fr}
+  .launch{flex-direction:column;align-items:flex-start}
+  .hero h1{font-size:30px}
+  .ns .nb{right:4px}
+}
+
+/* ---------- simulation page ---------- */
+.simpage{display:flex;flex-direction:column;height:100vh}
+.simbar{background:var(--ink);color:#fff;display:flex;align-items:center;gap:16px;padding:8px 16px;flex-wrap:wrap}
+.sb-back,.sb-btn{background:transparent;color:#fff;border:1px solid #444;border-radius:20px;padding:6px 14px;cursor:pointer;font-size:13.5px}
+.sb-back:hover,.sb-btn:hover{border-color:var(--gl);color:var(--gl)}
+.sb-title{font-weight:700;font-size:15px}
+.sb-title .kicker{display:block;font-size:10.5px}
+.sb-right{margin-left:auto;display:flex;gap:10px;align-items:center}
+.seg{display:flex;border:1px solid #444;border-radius:20px;overflow:hidden}
+.seg button{background:none;border:0;color:#ccc;padding:6px 14px;cursor:pointer;font-size:13.5px}
+.seg button.on{background:var(--g);color:#fff}
+.simbody{flex:1;display:flex;min-height:0}
+.tasks{width:320px;flex:none;background:#fff;border-right:1px solid var(--line);overflow:auto;padding:18px}
+.tk-kicker{font-weight:800;color:var(--gd);font-size:13px;text-transform:uppercase;letter-spacing:.08em}
+.tk-prog{height:6px;background:#e9eeeb;border-radius:9px;overflow:hidden;margin:8px 0 4px}
+.tk-prog div{height:100%;background:var(--g);transition:width .3s}
+.tk-count{font-size:12.5px;color:var(--mut)}
+.tk-intro{font-size:13.5px;color:var(--mut);margin:12px 0}
+.tk-list{list-style:none;padding:0;margin:0;font-size:13.5px;line-height:1.5}
+.tk-list li{display:flex;gap:10px;padding:9px 10px;border-radius:10px;margin-bottom:4px;color:#888}
+.tk-list li.cur{background:var(--gp);color:var(--ink);box-shadow:inset 3px 0 0 var(--g)}
+.tk-list li.done{color:var(--ink)}
+.tk-n{flex:none;width:22px;height:22px;border-radius:50%;background:#eceeed;display:grid;place-items:center;font-size:11.5px;font-weight:700;color:#777}
+.cur .tk-n{background:var(--g);color:#fff}
+.done .tk-n{background:var(--gl);color:var(--gdd)}
+.free .tk-list li{color:var(--ink)}
+.tk-hint{margin:12px 0;width:100%;background:var(--ink);color:#fff;border:0;border-radius:24px;padding:9px;cursor:pointer;font-weight:700}
+.tk-hint:hover{background:var(--g)}
+.tk-keys{font-size:12.5px;color:var(--mut);border-top:1px solid var(--line);margin-top:14px;padding-top:12px;line-height:1.7}
+.tk-keys kbd{background:#eee;border:1px solid #ccc;border-radius:4px;padding:0 5px;font-size:11.5px}
+.tk-alldone{background:var(--g);color:#fff;border-radius:10px;padding:10px 12px;font-size:13.5px;margin:10px 0}
+.desk{flex:1;overflow:auto;background:#d9e1dd;position:relative}
+.desk-inner{padding:18px;width:max-content}
+@media (max-width:900px){.simbody{flex-direction:column}.tasks{width:auto;max-height:38vh;border-right:0;border-bottom:1px solid var(--line)}}
+
+.done-ov{position:absolute;inset:0;background:rgba(11,59,42,.55);display:grid;place-items:center;z-index:200}
+.done-card{background:#fff;border-radius:16px;padding:30px 34px;max-width:420px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.done-card .big{width:64px;height:64px;border-radius:50%;background:var(--g);color:#fff;font-size:32px;display:grid;place-items:center;margin:0 auto 12px}
+.done-card h3{margin:0 0 6px;font-size:22px}
+.done-card p{color:var(--mut);margin:0 0 18px}
+.done-card .row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.pill{border:1px solid var(--line);background:#fff;border-radius:20px;padding:8px 16px;cursor:pointer;font-weight:600}
+.pill.pri{background:var(--g);color:#fff;border-color:var(--g)}
+
+/* ---------- the simulated application ---------- */
+.appwin{width:1180px;height:720px;background:#fff;border:1px solid #8a9690;box-shadow:0 12px 40px rgba(0,0,0,.2);display:flex;flex-direction:column;font:12.5px "Segoe UI",Tahoma,sans-serif;line-height:1.35;color:#000;user-select:none;position:relative}
+.w-title{height:28px;display:flex;align-items:center;gap:8px;padding-left:8px;flex:none}
+.w-ctl{margin-left:auto;display:flex}
+.w-ctl i{font-style:normal;width:44px;text-align:center;line-height:28px;color:#333}
+.w-menu{display:flex;height:22px;align-items:center;padding:0 2px;position:relative;z-index:30;flex:none}
+.mi{position:relative;padding:2px 7px;cursor:default}
+.mi:hover,.mi.open{background:var(--gp)}
+.dd{position:absolute;top:100%;left:0;background-color:#f4f4f4;isolation:isolate;border:1px solid #999;box-shadow:2px 3px 8px rgba(0,0,0,.25);min-width:220px;padding:2px 0;z-index:50}
+.ddi{padding:3px 24px;white-space:nowrap}
+.ddi:hover{background:#cdeedd}
+.ddi.dis{color:#a0a0a0}
+.ddi.dis:hover{background:none}
+.sep{height:1px;background:#ccc;margin:3px 2px}
+.w-tools{height:34px;display:flex;align-items:center;gap:10px;padding:0 4px;border-bottom:3px solid var(--g);flex:none}
+.tgroup{display:flex;gap:2px}
+.tbtn{width:21px;height:21px;border:1px solid #9fb2a9;background:#eef4f1;color:var(--gdd);display:grid;place-items:center;padding:0;cursor:pointer}
+.tbtn:hover{background:#d6ede2}
+.tbtn.act{outline:2px solid var(--g);outline-offset:1px}
+.w-search{flex:1;max-width:680px;display:flex;align-items:center;gap:4px;margin-left:120px;color:#555}
+.w-search input{flex:1}
+.w-brand{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:15px;letter-spacing:.06em;padding-right:6px;white-space:nowrap}
+.w-brand b{font-weight:800}
+.w-work{flex:1;display:flex;min-height:0}
+.w-tree{width:300px;flex:none;border-right:5px solid #dadada;overflow:auto}
+.w-mdi{flex:1;position:relative;background:#efefef;overflow:hidden}
+.w-status{height:22px;border-top:1px solid #ccc;display:grid;grid-template-columns:360px 280px 1fr 120px 175px 85px;font-size:12px;flex:none}
+.w-status span{border-left:1px solid #ccc;padding:2px 6px;white-space:nowrap;overflow:hidden;text-align:center}
+.tp-filters{display:flex;gap:3px;padding:4px}
+.tree-root{background:#dcdcdc;padding:2px 6px;display:flex;gap:6px;align-items:center}
+.tree-item{padding:1px 6px 1px 30px;display:flex;align-items:center;gap:6px;cursor:default;white-space:nowrap}
+.tree-item:hover{background:var(--gp)}
+.tree-item.sel{background:#cdeedd}
+.tree-item .ai{color:#0B3B2A;flex:none}
+.red-sq{width:12px;height:12px;background:#e01b1b;display:inline-block}
+
+.appwin input,.appwin select,.appwin textarea{font:inherit;border:1px solid #7a7a7a;background:#fff;color:#000;height:21px;padding:0 3px;border-radius:0}
+.appwin textarea{height:58px;resize:none;padding:2px 3px}
+.appwin input:disabled,.appwin select:disabled,.appwin textarea:disabled{background:#f0f0f0;color:#6d6d6d;border-color:#c4c4c4}
+.appwin input[type=radio],.appwin input[type=checkbox]{height:auto;accent-color:var(--g)}
+.b95{font:inherit;background:#e1e1e1;border:1px solid #adadad;padding:1px 12px;min-width:76px;cursor:pointer;height:23px;color:#000}
+.b95:hover:not(:disabled){background:#e3f3ec;border-color:var(--g)}
+.b95:disabled{color:#a3a3a3;background:#ececec;border-color:#d5d5d5;cursor:default}
+
+.nbwin{position:absolute;left:16px;top:8px;width:700px;height:534px;background:#fff;border:1px solid #888;box-shadow:3px 4px 14px rgba(0,0,0,.25);display:flex;flex-direction:column;z-index:5}
+.nb-title{height:26px;display:flex;align-items:center;gap:6px;padding-left:8px;font-size:13px;flex:none}
+.nb-x{margin-left:auto;border:0;background:none;width:40px;height:26px;cursor:pointer;font-size:14px}
+.nb-x:hover{background:#e81123;color:#fff}
+.nb-tabs{border-bottom:1px solid #c9c9c9;flex:none;padding-top:2px}
+.trow{display:flex;padding:0 2px}
+.tab{font:inherit;border:1px solid #c9c9c9;border-bottom:0;background:#f3f3f3;padding:1px 7px;margin-right:-1px;cursor:pointer;color:#000;white-space:nowrap}
+.tab:hover{background:#e3f3ec}
+.tab.hl{background:var(--g);color:#fff}
+.tab.on{background:#fff;font-weight:600;color:#000;box-shadow:inset 0 2px 0 var(--g)}
+.nbwin > .w-menu{z-index:40}
+.nb-tabs{position:relative;z-index:1}
+.nb-body{flex:1;overflow:auto;padding:10px 14px;position:relative;z-index:0;isolation:isolate}
+.nb-foot{height:34px;display:flex;align-items:center;gap:10px;padding:0 4px;border-top:1px solid #ddd;flex:none}
+.modebtn{font:inherit;font-size:13px;width:222px;height:24px;border:1px solid #999;background:#e1e1e1;cursor:pointer}
+.modebtn.upd{background:#cdeedd;border-color:var(--g)}
+.nb-kind{color:var(--gdd)}
+
+.gen{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.fr{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.fr label{width:72px;text-align:right;color:#000;flex:none}
+.g-right .fr label{width:142px}
+.fr.ta{align-items:flex-start}
+.fr input,.fr textarea{flex:1;min-width:0}
+.fr select{flex:1;min-width:0}
+.ro{font-weight:600}
+.blue,.fr label.blue{color:#1d3f8f}
+fieldset.box{border:1px solid #c9c9c9;margin:6px 0 10px;padding:4px 8px 8px}
+fieldset.box legend{padding:0 4px}
+.al{display:flex;gap:8px}
+.al .grid{flex:1;height:78px}
+.al-btns{display:flex;flex-direction:column;gap:5px}
+.codes .cr{display:flex;gap:6px;margin-bottom:5px;align-items:center}
+.codes .b95{width:112px;white-space:nowrap;padding:1px 6px}
+.chk{display:flex;align-items:center;gap:5px}
+.grid{border:1px solid #828790;background:#fff;overflow:auto}
+.gh{display:grid;background:#fff;border-bottom:1px solid #e5e5e5;position:sticky;top:0;z-index:1}
+.gh span{padding:2px 6px;border-right:1px solid #e5e5e5}
+.gr{display:grid;cursor:default}
+.gr span{padding:1px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gr:hover{background:var(--gp)}
+.gr.sel{background:#d7efe3;box-shadow:inset 0 0 0 2px var(--g)}
+.gr.loc span{color:#1d3f8f}
+.ph-row{display:flex;gap:40px;align-items:center;margin-bottom:6px}
+.red{color:#d21d1d}
+.grn{color:#178a2f}
+.tall{height:260px}
+.btnrow{display:flex;gap:6px;margin-top:10px}
+.pbtns{display:grid;grid-template-columns:repeat(4,1fr);gap:4px 8px;margin-top:10px}
+.pbtns .b95{min-width:0;width:100%}
+.ph-tab{color:#555;padding:30px 10px;text-align:center}
+.ph-tab b{display:block;color:#000;font-size:14px;margin-bottom:6px}
+
+/* multi-window engine */
+.xwin{position:absolute;background:#fff;border:1px solid #8a8a8a;box-shadow:3px 4px 14px rgba(0,0,0,.22);display:flex;flex-direction:column}
+.xwin.front{border-color:var(--gd);box-shadow:5px 8px 22px rgba(0,0,0,.32)}
+.xwin:not(.front) .nb-title{color:#777}
+.xwin > .w-menu{z-index:40}
+.xwin .tab{padding:1px 4px;font-size:12px}
+.nb-title[data-drag]{cursor:move;flex:none}
+.xbody{flex:1;overflow:auto;padding:8px 12px;position:relative;z-index:0;isolation:isolate}
+.xbody .fr label{width:122px;text-align:right}
+.b95.lb{width:100%;min-width:0;padding:1px 4px;white-space:nowrap}
+.amt{text-align:right;font-variant-numeric:tabular-nums}
+.fr > span.amt{width:130px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:2px 16px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:5px 8px;align-items:center}
+.kv > label{text-align:right;color:#1d3f8f;white-space:nowrap}
+.ro-in{display:inline-block;border:1px solid #c4c4c4;background:#f0f0f0;padding:0 4px;height:21px;line-height:19px;color:#333}
+.blue-list .gr span{color:#1d3f8f}
+.btn-grid{display:grid;gap:5px 14px;margin-top:10px}
+.btn-grid .b95{min-width:0;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.opts-grid{display:grid;grid-template-columns:auto auto auto;gap:5px 14px;align-items:center;margin:6px 0}
+.opts-grid .fr{margin:0}
+.os-box{border:1px solid #c9c9c9;background:#fff;padding:3px 10px;display:flex;flex-direction:column;gap:2px}
+.ctx{position:absolute;z-index:500;background:#f4f4f4;border:1px solid #999;box-shadow:2px 3px 8px rgba(0,0,0,.25);padding:2px 0;min-width:180px}
+.dd{max-height:500px;overflow-y:auto}
+
+.shade{position:absolute;inset:0;background:rgba(255,255,255,.12);z-index:300}
+.dlg{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);background:#f6f6f6;border:1px solid #777;box-shadow:4px 6px 18px rgba(0,0,0,.3);z-index:301;min-width:320px}
+.dlg-t{height:26px;display:flex;align-items:center;gap:6px;padding:0 8px;background:#fff;border-bottom:1px solid #ddd}
+.dlg-b{padding:14px 18px}
+.dlg-btns{display:flex;gap:10px;justify-content:center;margin-top:18px}
+.cs-radio{display:flex;gap:16px;justify-content:center;border:1px solid #ccc;background:#fff;width:176px;margin:0 auto 26px;padding:1px 6px}
+.cs-radio label{display:flex;gap:4px;align-items:center}
+.cs-row{display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:18px}
+.cs-row input{width:266px}
+.cs-row select{width:104px}
+.wrn{display:flex;gap:14px}
+.wicon{width:28px;height:28px;border-radius:50%;background:var(--amber);color:#fff;font-weight:800;display:grid;place-items:center;flex:none;font-size:16px}
+.wt{border-bottom:1px solid #ccc;padding-bottom:4px;margin-bottom:6px}
+.wrn p{margin:6px 0}
+.cl-search{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.ap-list label{display:flex;gap:6px;align-items:center;padding:3px 0}
+.ap-list label.dis{color:#999}
+.fm .fr label{width:90px}
+
+.pulse{animation:pulse 1.1s ease-in-out infinite;position:relative;z-index:60}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 2px var(--amber),0 0 0 6px rgba(245,180,0,.45)}50%{box-shadow:0 0 0 2px var(--amber),0 0 0 13px rgba(245,180,0,0)}}
+
+#toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);background:var(--ink);color:#fff;padding:11px 18px;border-radius:10px;font-size:14px;max-width:min(560px,92vw);opacity:0;pointer-events:none;transition:.25s;z-index:999;box-shadow:0 8px 24px rgba(0,0,0,.3);border-left:4px solid var(--g)}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* =====================================================================
+   BNPP Simulator: training simulation
+   - MODULES: course content (add new modules / sections here)
+   - SIMS:    guided simulations launched from a section
+   ===================================================================== */
+
+const LOGO = `<svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#00915A"/><path d="M9 23c0-8 6-14 15-14-1 9-6 15-14 15" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M9 24l7-7" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg>`;
+const LOGO_SM = LOGO.replace('width="28" height="28"','width="14" height="14"');
+
+const ICON = (inner) => `<svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor" aria-hidden="true">${inner}</svg>`;
+const ICONS = {
+  folder: ICON('<path d="M1 3h5l1.5 1.5H15V13H1z"/>'),
+  tree:   ICON('<rect x="1" y="1" width="6" height="4"/><rect x="9" y="6" width="6" height="3"/><rect x="9" y="11" width="6" height="3"/><path d="M3 5v8h6M3 7.5h6" fill="none" stroke="currentColor" stroke-width="1.3"/>'),
+  clock:  ICON('<circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 4v4l3 2" fill="none" stroke="currentColor" stroke-width="1.6"/>'),
+  home:   ICON('<path d="M8 1.5 1 8h2v6.5h4v-4h2v4h4V8h2z"/>'),
+  case:   ICON('<rect x="1" y="5" width="14" height="9" rx="1"/><path d="M5 5V3h6v2" fill="none" stroke="currentColor" stroke-width="1.6"/>'),
+  wrench: ICON('<path d="M10.5 1a4 4 0 0 0-3.8 5.2L1 11.9 3.6 14.5l5.7-5.7A4 4 0 0 0 14.5 5l-2.4 2.4-2.2-.6-.6-2.2L11.7 2.2A4 4 0 0 0 10.5 1z"/>'),
+  tri:    ICON('<path d="M8 2 15 14H1z"/>'),
+  chart:  ICON('<rect x="1" y="9" width="3" height="5"/><rect x="6" y="5" width="3" height="9"/><rect x="11" y="2" width="3" height="12"/>'),
+  search: ICON('<circle cx="10" cy="6" r="4.3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7 9 1.5 14.5" stroke="currentColor" stroke-width="1.8"/>'),
+  item:   `<svg width="13" height="13" viewBox="0 0 13 13" aria-hidden="true"><rect x="1" y="1" width="11" height="11" rx="2" fill="#0B3B2A"/><rect x="3.5" y="3.5" width="6" height="6" rx="1" fill="#7CC9A6"/></svg>`,
+};
+
+/* ---------------- diagrams ---------------- */
+const DIAGRAM_DATA = `
+<svg viewBox="0 0 360 160" role="img" aria-label="Customer linked to Deal, Facility and Outstanding">
+  <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10z" fill="#0B3B2A"/></marker></defs>
+  <g font-family="Segoe UI, sans-serif" font-size="13" font-weight="600" text-anchor="middle">
+    <rect x="10" y="12" width="140" height="32" rx="4" fill="#00915A"/><text x="80" y="33" fill="#fff">Deal</text>
+    <rect x="10" y="64" width="140" height="32" rx="4" fill="#00915A"/><text x="80" y="85" fill="#fff">Facility</text>
+    <rect x="10" y="116" width="140" height="32" rx="4" fill="#00915A"/><text x="80" y="137" fill="#fff">Outstanding</text>
+    <rect x="210" y="64" width="140" height="32" rx="4" fill="#121212"/><text x="280" y="85" fill="#fff">Customer</text>
+  </g>
+  <g stroke="#0B3B2A" stroke-width="1.6" fill="none" marker-end="url(#ah)">
+    <path d="M80 44v18"/><path d="M80 96v18"/>
+    <path d="M232 64 152 34"/><path d="M210 80h-58"/><path d="M232 96 152 126"/>
+  </g>
+</svg>`;
+
+const DIAGRAM_PROFILES = `
+<svg viewBox="0 0 520 190" role="img" aria-label="A customer can have four profiles">
+  <g stroke="#7CC9A6" stroke-width="2">
+    <path d="M260 95 90 35M260 95 430 35M260 95 90 155M260 95 430 155"/>
+  </g>
+  <g font-family="Segoe UI, sans-serif" font-size="14" font-weight="700" text-anchor="middle">
+    <rect x="190" y="74" width="140" height="42" rx="21" fill="#121212"/><text x="260" y="100" fill="#fff">Customer</text>
+    <rect x="20" y="16" width="140" height="38" rx="6" fill="#00915A"/><text x="90" y="40" fill="#fff">1 · Borrower</text>
+    <rect x="360" y="16" width="140" height="38" rx="6" fill="#00915A"/><text x="430" y="40" fill="#fff">2 · Lender</text>
+    <rect x="20" y="136" width="140" height="38" rx="6" fill="#00915A"/><text x="90" y="160" fill="#fff">3 · Guarantor</text>
+    <rect x="360" y="136" width="140" height="38" rx="6" fill="#00915A"/><text x="430" y="160" fill="#fff">4 · Beneficiary</text>
+  </g>
+</svg>`;
+
+const NOTEBOOK_SCHEMA = `
+<div class="ns" aria-label="Elements of a notebook">
+  <div>Active Customer -- BORROWER 1 <span class="nb"><span class="badge">1</span></span></div>
+  <div>File &nbsp; Options &nbsp; Queries &nbsp; Accounting &nbsp; Instant Message <span class="nb"><span class="badge">2</span></span></div>
+  <div class="ns-tabs"><span class="on">General</span><span>Corporate</span><span>Risk</span><span>Personnel</span><span>Profiles</span><span class="nb"><span class="badge">3</span></span></div>
+  <div class="ns-body"></div>
+  <div><span class="ns-mode">Notebook in Inquiry Mode - F7</span> <span class="nb"><span class="badge">4</span></span></div>
+</div>`;
+
+const DIAGRAM_DEAL = `
+<svg viewBox="0 0 640 290" role="img" aria-label="Bilateral deal structure: deal, borrower, sole lender, facility, pricing and outstanding">
+  <defs><marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10z" fill="#0B3B2A"/></marker></defs>
+  <g stroke="#0B3B2A" stroke-width="1.6" fill="none" marker-end="url(#ah2)">
+    <path d="M180 62h48"/><path d="M180 134 228 86"/>
+    <path d="M320 92v36"/><path d="M412 156h46"/><path d="M320 182v34"/>
+  </g>
+  <g font-family="Segoe UI, sans-serif" text-anchor="middle">
+    <rect x="230" y="20" width="180" height="72" rx="6" fill="#121212"/>
+    <text x="320" y="40" fill="#7CC9A6" font-size="11" font-weight="700" letter-spacing="1.5">DEAL</text>
+    <text x="320" y="61" fill="#fff" font-size="16" font-weight="800">BIL DEAL</text>
+    <text x="320" y="80" fill="#cfd8d3" font-size="11.5">Closed · USD 20,000,000.00</text>
+    <rect x="20" y="38" width="160" height="48" rx="6" fill="#00915A"/>
+    <text x="100" y="58" fill="#fff" font-size="12.5" font-weight="700">2 · Borrower</text><text x="100" y="76" fill="#E7F4EE" font-size="11.5">BORROWER 1</text>
+    <rect x="20" y="110" width="160" height="48" rx="6" fill="#00915A"/>
+    <text x="100" y="130" fill="#fff" font-size="12.5" font-weight="700">3 · Lender (sole)</text><text x="100" y="148" fill="#E7F4EE" font-size="11.5">IQFS LON · 100%</text>
+    <rect x="230" y="130" width="180" height="52" rx="6" fill="#00915A"/>
+    <text x="320" y="151" fill="#fff" font-size="12.5" font-weight="700">1 · Facility</text><text x="320" y="170" fill="#E7F4EE" font-size="11.5">REVOLVER · 20,000,000.00</text>
+    <rect x="460" y="127" width="165" height="58" rx="6" fill="#E7F4EE" stroke="#00915A"/>
+    <text x="542" y="149" fill="#006A43" font-size="12.5" font-weight="700">4 · Pricing</text><text x="542" y="168" fill="#0B3B2A" font-size="11">Libor + Spread 2% · Fees</text>
+    <rect x="205" y="218" width="230" height="56" rx="6" fill="#E7F4EE" stroke="#00915A"/>
+    <text x="320" y="240" fill="#006A43" font-size="12.5" font-weight="700">5 · Outstanding</text><text x="320" y="259" fill="#0B3B2A" font-size="11">Loan BORROWER 100280 · 1,000,000.00</text>
+  </g>
+</svg>`;
+
+const FLOW_WINDOWS = `
+<div class="flow">
+  <div class="fnode">Deal Notebook</div><div class="farrow">Options › Facilities...</div>
+  <div class="fnode g">Facility Navigator</div><div class="farrow">double-click</div>
+  <div class="fnode g">Facility Notebook</div><div class="farrow">Queries › Outstanding Select...</div>
+  <div class="fnode g">Existing Loans</div><div class="farrow">double-click</div>
+  <div class="fnode g">Loan Notebook</div>
+</div>`;
+
+/* ---------------- course content ---------------- */
+const MODULES = [
+  {
+    id: 'm1', num: 1, available: true,
+    title: 'Loan IQ Fundamentals',
+    summary: 'How information is organized, the elements of a notebook, the customer structure and the bilateral deal structure.',
+    sections: [
+      {
+        id: 's1', lesson: 'Lesson 1 of 3', title: 'Structure of Fusion Loan IQ Data',
+        html: `
+          <p>Most information in Fusion Loan IQ relates to customers and/or deals. The customer can be linked to a deal and its facilities. Once the deal is approved and closed, servicing transactions can be entered for a particular facility.</p>
+          <p>All information in Fusion Loan IQ is kept in a real-time relational database. Data is entered only once and is instantly available to all authorized personnel.</p>
+          <div class="split">
+            <div class="figure">${DIAGRAM_DATA}<div class="figcap">How the data is organized</div></div>
+            <p>Information is categorized by <b>Customer</b>, <b>Deal</b>, and <b>Facility</b>. A Customer is any legal entity that may be involved in a Deal. A Deal contains all the commitments from a single credit agreement for all lenders in that credit agreement. A Facility is a credit line that is available to the borrower. Different types of <b>Outstanding</b> are booked under the Facility.</p>
+          </div>
+          <p>Nearly all Fusion Loan IQ information can be viewed through <b>Notebooks</b>.</p>
+          <div class="modes">
+            <div class="mode"><div class="ic">👁</div><div><b>Inquiry mode</b><span>View only</span></div></div>
+            <div class="mode upd"><div class="ic">✎</div><div><b>Update mode</b><span>Enter or modify data</span></div></div>
+          </div>
+          <p>There are two viewing modes available in Fusion Loan IQ Notebooks: Inquiry mode (view only) and Update mode (enter or modify data). Make sure you are in <b>Update mode</b> to enter data or perform a transaction in Fusion Loan IQ.</p>
+          <h3 class="band">Elements of a Notebook</h3>
+          <p>All notebooks have similar elements as shown in the table below.</p>
+          ${NOTEBOOK_SCHEMA}
+          <table class="t">
+            <thead><tr><th>Notebook element</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><span class="badge">1</span>Title Bar</td><td>Identifies the name of the notebook, the name of the customer, deal or facility, and the deal status. Very useful for identifying where you are in Fusion Loan IQ.</td></tr>
+              <tr><td><span class="badge">2</span>Menu Bar</td><td>Used to execute certain functions.</td></tr>
+              <tr><td><span class="badge">3</span>Tabs</td><td>Used to move between minor sections of a notebook.</td></tr>
+              <tr><td><span class="badge">4</span>Inquiry/Update button</td><td>Used to switch between Inquiry and Update mode.</td></tr>
+            </tbody>
+          </table>`,
+        quiz: [
+          { q: 'Which notebook mode lets you enter or modify data?', o: ['Inquiry mode', 'Update mode'], a: 1, why: 'Inquiry mode is view only. Switch to Update mode (F7) to enter data or perform a transaction.' },
+          { q: 'Which notebook element identifies the notebook, the customer/deal/facility and the deal status?', o: ['Menu Bar', 'Tabs', 'Title Bar', 'Inquiry/Update button'], a: 2, why: 'The Title Bar tells you where you are in the application.' },
+          { q: 'Under which object are the different types of Outstanding booked?', o: ['Customer', 'Deal', 'Facility'], a: 2, why: 'Outstandings are booked under the Facility, the credit line available to the borrower.' },
+          { q: 'When can servicing transactions be entered for a facility?', o: ['As soon as the customer is created', 'Once the deal is approved and closed', 'Only in Inquiry mode'], a: 1, why: 'Servicing starts once the deal is approved and closed.' },
+        ],
+        sim: 'notebook',
+        simTitle: 'Open and explore a Customer Notebook',
+        simDesc: 'Find a customer, open its notebook, use the Menu Bar and Tabs, then switch from Inquiry to Update mode.',
+      },
+      {
+        id: 's2', lesson: 'Lesson 2 of 3', title: 'Fusion Loan IQ Customer Structure',
+        html: `
+          <p>A customer in Fusion Loan IQ has up to <b>four</b> potential profiles:</p>
+          <div class="figure">${DIAGRAM_PROFILES}</div>
+          <ol class="big">
+            <li>Borrower</li>
+            <li>Lender</li>
+            <li>Guarantor</li>
+            <li>Beneficiary</li>
+          </ol>
+          <p>Specific information is then entered for each profile.</p>
+          <div class="note">In the Customer Notebook, profiles are managed on the <b>Profiles</b> tab. Each profile has one or more <b>locations</b> (for example <i>New York, NY</i>), and each location must be completed. Remember: you must be in <b>Update mode</b> to add a profile.</div>`,
+        quiz: [
+          { q: 'How many potential profiles can a customer have?', o: ['Two', 'Three', 'Four', 'Unlimited'], a: 2, why: 'Borrower, Lender, Guarantor and Beneficiary.' },
+          { q: 'Which of these is NOT a customer profile?', o: ['Borrower', 'Facility', 'Guarantor', 'Beneficiary'], a: 1, why: 'A Facility is a credit line under a deal, not a customer profile.' },
+        ],
+        sim: 'profiles',
+        simTitle: 'Add a profile to a customer',
+        simDesc: 'Open BORROWER 1, go to the Profiles tab, switch to Update mode, then add and complete a Beneficiary profile.',
+      },
+      {
+        id: 's3', lesson: 'Lesson 3 of 3', title: 'Fusion Loan IQ Sole Lender / Bilateral Deal Structure',
+        html: `
+          <p>Deals in Fusion Loan IQ have multiple levels of information and map directly to a particular credit agreement. Some of the data associated with a deal includes:</p>
+          <ol class="steps">${['Facility(s)', 'Borrower(s)', 'Lender(s)', 'Pricing (interest, fees)', 'Outstanding(s)'].map((x, i) => `<li><span class="num-dot">${i + 1}</span>${x}</li>`).join('')}</ol>
+          <div class="figure">${DIAGRAM_DEAL}<div class="figcap">Loan IQ deal structure: bilateral credit (example used in the simulation: BIL DEAL)</div></div>
+          <h3 class="band">Where to find each element</h3>
+          <p>In a sole lender (bilateral) deal, a single lender holds 100% of the commitment. Each element of the deal is reached from the Deal Notebook:</p>
+          <table class="t">
+            <thead><tr><th>Deal element</th><th>Where to find it</th></tr></thead>
+            <tbody>
+              <tr><td><span class="badge">1</span>Facility(s)</td><td>Deal Notebook › <b>Options › Facilities...</b> opens the Facility Navigator. Double-click a facility to open its notebook.</td></tr>
+              <tr><td><span class="badge">2</span>Borrower(s)</td><td>Deal Notebook › <b>Summary</b> tab › Borrowers / Depositors.</td></tr>
+              <tr><td><span class="badge">3</span>Lender(s)</td><td>Deal Notebook › <b>Queries › Lender Query...</b></td></tr>
+              <tr><td><span class="badge">4</span>Pricing</td><td>Deal Notebook › <b>Pricing Rules</b> tab (allowed options and fees). Facility Notebook › <b>Pricing</b> tab (interest and fees).</td></tr>
+              <tr><td><span class="badge">5</span>Outstanding(s)</td><td>Facility Notebook › <b>Queries › Outstanding Select...</b></td></tr>
+            </tbody>
+          </table>
+          <h3 class="band">Working with many windows</h3>
+          <p>Fusion Loan IQ opens each notebook and list in its own window, so navigating a deal quickly fills the screen:</p>
+          ${FLOW_WINDOWS}
+          <div class="note">To tidy up, <b>right-click</b> anywhere in the workspace and choose <b>Close All Windows</b>.</div>`,
+        quiz: [
+          { q: 'In a sole lender (bilateral) deal, how much of the commitment does the lender hold?', o: ['50%', '100%', 'It depends on the borrower'], a: 1, why: 'A single lender holds the whole commitment.' },
+          { q: 'Which Deal Notebook menu opens the Facility Navigator?', o: ['Queries', 'Options', 'Status'], a: 1, why: 'Options › Facilities...' },
+          { q: 'Where do you find the lender of a deal?', o: ['Queries › Lender Query...', 'Summary tab', 'Pricing Rules tab'], a: 0, why: 'The Lender Query shows each lender and its position.' },
+          { q: 'How do you close every open window at once?', o: ['File › Exit in each window', 'Right-click › Close All Windows', 'Press F7'], a: 1, why: 'F7 only toggles Inquiry/Update mode.' },
+        ],
+        sim: 'deal',
+        simTitle: 'Navigate a bilateral deal',
+        simDesc: 'Open BIL DEAL, then find its pricing, lender, facility and outstanding loan across several windows, and close them all at once.',
+      },
+    ],
+  },
+  {
+    id: 'm2', num: 2, available: true,
+    title: 'Remittance Instructions (RI)',
+    summary: 'Create, approve and release remittance instructions on a customer location. All parts start from the Customer Notebook.',
+    sections: [
+      {
+        id: 's1', lesson: 'Part 1 of 3', title: 'Create FED Remittance Instructions for a Borrower',
+        html: `
+          <p><b>Goal:</b> create a <b>FED</b> (Federal Reserve) remittance instruction for a customer that has a <b>Borrower</b> profile.</p>
+          <p>A remittance instruction (RI) tells Fusion Loan IQ how money is sent to, or received from, the customer: the payment method, the bank and the account. Remittance instructions are attached to a <b>location</b> of a customer profile, so every part of this module starts from the <b>Customer Notebook</b>.</p>
+          <h3 class="band">The process</h3>
+          <div class="flow">
+            <div class="fnode">Customer Notebook</div><div class="farrow">Profiles tab · Update mode · select location</div>
+            <div class="fnode g">Remittance List</div><div class="farrow">Add › Standard</div>
+            <div class="fnode g">RI Detail</div><div class="farrow">fill in · File › Save</div>
+            <div class="fnode g">Workflow tab</div><div class="farrow">Send to Approval</div>
+            <div class="fnode g">Release</div>
+          </div>
+          <h3 class="band">Values used in this exercise</h3>
+          <table class="t">
+            <thead><tr><th>Field</th><th>Value</th></tr></thead>
+            <tbody>
+              <tr><td>Customer / profile / location</td><td>SMITH CORPORATION · Borrower · New York, NY</td></tr>
+              <tr><td>Remittance Instruction Type</td><td>Add Standard Remittance Instruction</td></tr>
+              <tr><td>Method</td><td>Federal Reserve (description FED2, currency USD)</td></tr>
+              <tr><td>ABA Number</td><td>011000138 · Fleet Natl Bk</td></tr>
+              <tr><td>Product / Direction / Balance</td><td>All Loan Types + SBLC/BA · From Cust + To Cust · Principal, Interest, Fees</td></tr>
+              <tr><td>Beneficiary</td><td>Acct # 456123 · Type Bank Account · Info Account1</td></tr>
+            </tbody>
+          </table>
+          <h3 class="band">Status of the remittance instruction</h3>
+          <div class="flow">
+            <div class="fnode">Pending</div><div class="farrow">File › Save</div>
+            <div class="fnode">Awaiting Send To Approval</div><div class="farrow">Send to Approval</div>
+            <div class="fnode">Awaiting Release</div><div class="farrow">Release</div>
+            <div class="fnode g">Released</div>
+          </div>
+          <div class="note">The status is shown in the notebook <b>Title Bar</b>, e.g. <i>Remittance Instructions Detail--Type: Federal Reserve / Awaiting Send To Approval</i>.</div>`,
+        quiz: [
+          { q: 'Where are remittance instructions attached?', o: ['To the deal', 'To a location of a customer profile', 'To the facility'], a: 1, why: 'Select the location on the Profiles tab, then click Remittance Instructions.' },
+          { q: 'Which button selects the bank of a Federal Reserve RI?', o: ['Included Fees', 'ABA Number:', 'Bank to Bank Instructions'], a: 1, why: 'ABA Number: opens the Select Bank list.' },
+          { q: 'After saving, which workflow items must be completed?', o: ['Send to Approval, then Release', 'Release, then Send to Approval', 'Nothing, the RI is active'], a: 0, why: 'Both are done from the Workflow tab by double-clicking the item.' },
+        ],
+        sim: 'ri1',
+        simTitle: 'Create a FED remittance instruction',
+        simDesc: 'Open SMITH CORPORATION, add a Federal Reserve remittance instruction to the New York, NY location of its Borrower profile, then send it to approval and release it.',
+      },
+      { id: 's2', lesson: 'Part 2 of 3', title: 'Coming next', placeholder: true },
+      { id: 's3', lesson: 'Part 3 of 3', title: 'Coming next', placeholder: true },
+    ],
+  },
+  { id: 'm3', num: 3, title: 'Module 3', summary: 'Content to be added.', available: false },
+  { id: 'm4', num: 4, title: 'Module 4', summary: 'Content to be added.', available: false },
+];
+
+/* ---------------- simulated data ---------------- */
+const ACTION_LIST = ['Accounting and Control','Ad Hoc Query','Advanced Collateral','Amendments','Approvals Matrix','Batch Administration','Budget Tracking','Circle','Collateral','Collections','Contact','Corporate Relationships','Credit Control Approval','Current Account','Customer','Deal','Doc Tracking','Facility','Lender Query','Lender Shares','Mailing Lists','Manage Tasks','Mark Portfolio','Notepad','Notices','Notifications Matrix','Outstanding','Payment Application','Portfolio Query','Reports','Risk Book Available','Sales Targets','Sales Teams','Security Definition'];
+/* Actions panel icons (16x16, drawn in currentColor; white details on filled shapes) */
+const AI = {
+  calc: '<rect x="3" y="1" width="10" height="14" rx="1"/><rect x="5" y="3" width="6" height="3" fill="#fff"/><g fill="#fff"><rect x="5" y="8" width="2" height="2"/><rect x="9" y="8" width="2" height="2"/><rect x="5" y="11" width="2" height="2"/><rect x="9" y="11" width="2" height="2"/></g>',
+  db: '<ellipse cx="8" cy="3.5" rx="5.5" ry="2.2"/><path d="M2.5 5.5v3c0 1.2 2.5 2.2 5.5 2.2s5.5-1 5.5-2.2v-3c0 1.2-2.5 2.2-5.5 2.2S2.5 6.7 2.5 5.5zM2.5 10v2.5c0 1.2 2.5 2.2 5.5 2.2s5.5-1 5.5-2.2V10c0 1.2-2.5 2.2-5.5 2.2S2.5 11.2 2.5 10z"/>',
+  coll: '<rect x="1.5" y="1.5" width="13" height="13" rx="2"/><circle cx="8" cy="8" r="3.8" fill="#fff"/><circle cx="8" cy="8" r="1.9"/>',
+  link: '<g fill="none" stroke="currentColor" stroke-width="1.7"><rect x="0.8" y="7.6" width="7.6" height="4.4" rx="2.2" transform="rotate(-45 4.6 9.8)"/><rect x="7.6" y="4" width="7.6" height="4.4" rx="2.2" transform="rotate(-45 11.4 6.2)"/><path d="M6.3 9.7l3.4-3.4"/></g>',
+  grid: '<path d="M1.5 1.5h13v13h-13zM1.5 5.8h13M1.5 10.2h13M5.8 1.5v13M10.2 1.5v13" fill="none" stroke="currentColor" stroke-width="1.4"/>',
+  grid2: '<rect x="1" y="1" width="14" height="14"/><g fill="#fff"><rect x="3" y="3" width="3" height="3"/><rect x="10" y="3" width="3" height="3"/><rect x="6.5" y="6.5" width="3" height="3"/><rect x="3" y="10" width="3" height="3"/><rect x="10" y="10" width="3" height="3"/></g>',
+  batch: '<path d="M2 14 10 6" stroke="currentColor" stroke-width="1.8"/><path d="M11 1l.8 2.2L14 4l-2.2.8L11 7l-.8-2.2L8 4l2.2-.8z"/><circle cx="4" cy="4" r="1"/>',
+  hat: '<path d="M4 9.5c0-4.2 1.6-6.5 4-6.5s4 2.3 4 6.5z"/><ellipse cx="8" cy="11" rx="7" ry="2.4"/>',
+  circle: '<circle cx="8" cy="8" r="5.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-dasharray="2.6 1.7"/>',
+  cart: '<path d="M1 2h2.5l1.8 8h8l1.5-6H4.2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="6" cy="13" r="1.4"/><circle cx="12" cy="13" r="1.4"/>',
+  phone: '<path d="M1 7.2C2.6 4 5.3 3 8 3s5.4 1 7 4.2l-3 1.3-.8-2C10.2 6 9.1 5.8 8 5.8S5.8 6 4.8 6.5l-.8 2z"/><rect x="4" y="9" width="8" height="5" rx="1"/>',
+  network: '<path d="M2.5 2.5l11 11M13.5 2.5l-11 11" stroke="currentColor" stroke-width="1.2"/><circle cx="8" cy="8" r="2.4"/><circle cx="2.5" cy="2.5" r="1.9"/><circle cx="13.5" cy="2.5" r="1.9"/><circle cx="2.5" cy="13.5" r="1.9"/><circle cx="13.5" cy="13.5" r="1.9"/>',
+  card: '<rect x="1" y="3.5" width="14" height="9.5" rx="1.5"/><rect x="1" y="5.5" width="14" height="2" fill="#fff"/><rect x="3" y="10" width="4" height="1.3" fill="#fff"/>',
+  bank: '<path d="M8 1 1 4.5V6h14V4.5z"/><rect x="2.5" y="7" width="2" height="5.5"/><rect x="7" y="7" width="2" height="5.5"/><rect x="11.5" y="7" width="2" height="5.5"/><rect x="1" y="13" width="14" height="2"/>',
+  person: '<circle cx="8" cy="4.5" r="3.3"/><path d="M1.5 15c0-4 3-6.2 6.5-6.2s6.5 2.2 6.5 6.2z"/>',
+  deal: '<path d="M0.5 6.5 3.5 4l3 1.3L8.5 4h2l5 3-1.6 2.6-2.6 2.4-1.8-1.3-1.4 1.4-1.5-1.4-1.6 1.1-1.3-1.2-1.2.7z"/><path d="M6 8.3l2 1.6" stroke="#fff" stroke-width="1"/>',
+  doc: '<path d="M3 1h7l3 3v11H3z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M5 6h6M5 8.5h6M5 11h4" stroke="currentColor" stroke-width="1.2"/>',
+  facility: '<circle cx="10" cy="4" r="2.8"/><path d="M1 10.5h3l3-1.5h3.5c.9 0 .9 1.5 0 1.5H8h4.3l2.7-2v3.2L12 14H1z"/>',
+  question: '<path d="M5 5.2C5 3.4 6.4 2 8.2 2s3.1 1.2 3.1 2.8c0 2.4-2.6 2.5-2.6 4.7" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="8.7" cy="13.3" r="1.2"/>',
+  pie: '<path d="M7 2.5A6.5 6.5 0 1 0 13.5 9H7z"/><path d="M8.5 1v6.5H15A6.5 6.5 0 0 0 8.5 1z"/>',
+  mail: '<rect x="1" y="3" width="14" height="10" rx="1"/><path d="M1.5 3.5 8 9l6.5-5.5" fill="none" stroke="#fff" stroke-width="1.3"/>',
+  tasks: '<rect x="1" y="1.5" width="14" height="13" rx="1.5"/><path d="M3.5 5h9M3.5 8h9M3.5 11h9" stroke="#fff" stroke-width="1.4"/>',
+  check: '<rect x="1.5" y="1.5" width="13" height="13" rx="1.5"/><path d="M4 8.2 7 11l5-6" fill="none" stroke="#fff" stroke-width="2"/>',
+  notepad: '<rect x="2.5" y="2.5" width="11" height="12.5" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M5 1v3M8 1v3M11 1v3M5 7.5h6M5 10.5h6" stroke="currentColor" stroke-width="1.3"/>',
+  bell: '<path d="M8 1.5c-2.5 0-4.2 2-4.2 4.5v3.5L2 12h12l-1.8-2.5V6c0-2.5-1.7-4.5-4.2-4.5z"/><circle cx="8" cy="13.6" r="1.5"/>',
+  bag: '<path d="M6 1h4L9 3.5H7z"/><path d="M7 4h2c3 1.5 5 4.5 5 7 0 2.5-2 4-6 4s-6-1.5-6-4c0-2.5 2-5.5 5-7z"/><path d="M8 7v6.5M9.7 8.5C9.3 7.8 6.4 7.6 6.5 9s3.2 1 3.2 2.4-3 1.3-3.4.6" fill="none" stroke="#fff" stroke-width="1.1"/>',
+  payment: '<rect x="1" y="2" width="11" height="8" rx="1"/><rect x="1" y="4" width="11" height="1.6" fill="#fff"/><path d="M8.5 12.5h6M12.5 10.3l2.2 2.2-2.2 2.2" fill="none" stroke="currentColor" stroke-width="1.5"/>',
+  qcircle: '<circle cx="8" cy="8" r="6.8"/><path d="M6 6.2c0-1.2.9-2 2-2s2 .8 2 1.9c0 1.6-1.8 1.6-1.8 3.2" fill="none" stroke="#fff" stroke-width="1.5"/><circle cx="8.2" cy="11.7" r=".9" fill="#fff"/>',
+  reports: '<circle cx="8" cy="8" r="6.8"/><path d="M4.6 11V8.5M7 11V5.5M9.4 11V7.5M11.8 11V4.5" stroke="#fff" stroke-width="1.5"/>',
+  book: '<rect x="3" y="1" width="10" height="14" rx="1"/><path d="M5.5 1v14" stroke="#fff" stroke-width="1"/><path d="M8 4.5h3" stroke="#fff" stroke-width="1.3"/>',
+  target: '<circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="3.8" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="1.4"/>',
+  team: '<circle cx="8" cy="4.5" r="2.4"/><circle cx="3" cy="6" r="1.9"/><circle cx="13" cy="6" r="1.9"/><path d="M3.8 14c0-3 1.8-5 4.2-5s4.2 2 4.2 5zM0 13c0-2.4 1.2-4 3-4 .6 0 1.1.1 1.5.4C3.6 10.4 3 11.6 3 13zM16 13c0-2.4-1.2-4-3-4-.6 0-1.1.1-1.5.4.9 1 1.5 2.2 1.5 3.6z"/>',
+  shield: '<path d="M8 1 2 3.5v4c0 3.6 2.6 6.4 6 7.5 3.4-1.1 6-3.9 6-7.5v-4z"/><path d="M5.5 8 7.4 10l3.4-4" fill="none" stroke="#fff" stroke-width="1.6"/>',
+};
+const ACTION_ICON = {
+  'Accounting and Control': 'calc', 'Ad Hoc Query': 'db', 'Advanced Collateral': 'coll', 'Amendments': 'link',
+  'Approvals Matrix': 'grid', 'Batch Administration': 'batch', 'Budget Tracking': 'hat', 'Circle': 'circle',
+  'Collateral': 'coll', 'Collections': 'cart', 'Contact': 'phone', 'Corporate Relationships': 'network',
+  'Credit Control Approval': 'card', 'Current Account': 'bank', 'Customer': 'person', 'Deal': 'deal',
+  'Doc Tracking': 'doc', 'Facility': 'facility', 'Lender Query': 'question', 'Lender Shares': 'pie',
+  'Mailing Lists': 'mail', 'Manage Tasks': 'tasks', 'Mark Portfolio': 'check', 'Notepad': 'notepad',
+  'Notices': 'bell', 'Notifications Matrix': 'grid2', 'Outstanding': 'bag', 'Payment Application': 'payment',
+  'Portfolio Query': 'qcircle', 'Reports': 'reports', 'Risk Book Available': 'book', 'Sales Targets': 'target',
+  'Sales Teams': 'team', 'Security Definition': 'shield',
+};
+const actionIcon = n => `<svg class="ai" viewBox="0 0 16 16" width="14" height="14" fill="currentColor" aria-hidden="true">${AI[ACTION_ICON[n]] || AI.doc}</svg>`;
+
+const BRANCHES = ['North American Corporate Lending','European Corporate Lending','Asia Pacific Lending'];
+const LOCATIONS = ['New York, NY','London, United Kingdom','Paris, France','Frankfurt, Germany','Aabenraa, Denmark'];
+const B1_ID = '(-B5080L';
+
+// withSmith: SMITH CORPORATION exists only in Module 2 (Remittance Instructions) simulations
+function baseCustomers(withSmith) {
+  const rows = [
+    ['BANK 6','Bank 6','47','Lender'], ['BANK2014','BANK2014','21','Lender'], ['BAT','Batman','40','Borrower'],
+    ['BENEFICIARY','Beneficiary','9','Beneficiary'], ['BENEFICIARY 7.3','BENEFICIARY 7.3','17','Beneficiary'],
+    ['BORROR2014','BORROR2014','22','Borrower'], ['BORROWER','Borrower','14','Borrower'],
+    ['BORROWER 1','BORROWER 1',B1_ID,'Borrower'], ['BORROWER 1 7.3','Borrower 1 7.3','19','Borrower'],
+    ['BORROWER 2','Borrower 2','23','Borrower'], ['GUARANTOR 1','Guarantor 1','31','Guarantor'],
+    ['LENDER A','Lender A','52','Lender'], ['LENDER B','Lender B','53','Lender'], ['PARIS CORP','Paris Corp SA','61','Borrower'],
+    ['SMITH CORPORATION','Smith Corporation',SMITH_ID,'Borrower'],
+  ];
+  return rows.map(([short, legal, id, prof]) => ({
+    short, legal, id, bank: 'IQFS', status: 'Active (Active)', branch: BRANCHES[0], prospect: '', language: '',
+    notice: 'Faxes/Emails Only', expCode: '000002', expDesc: 'GENERAL PURPOSE', dept: 'DEPAR', deptDesc: 'Department 1',
+    classification: id === B1_ID ? 'Broker/Dealer' : 'Corporate', broker: false, aliases: [], personnel: [],
+    profiles: id === B1_ID
+      ? [ { type: 'Borrower', status: 'In Use', locs: [{ name: 'New York, NY', status: 'Complete' }] },
+          { type: 'Guarantor', status: 'Not In Use', locs: [{ name: 'Aabenraa, Denmark', status: 'Complete' }] },
+          { type: 'Lender', status: 'Not In Use', locs: [] } ]
+      : id === SMITH_ID
+      ? [ { type: 'Borrower', status: 'In Use', locs: [{ name: 'Aabenraa, Denmark', status: 'Complete' }, { name: 'London, United Kingdom', status: '' }, { name: 'New York, NY', status: '' }] } ]
+      : [ { type: prof, status: 'In Use', locs: [{ name: 'New York, NY', status: 'Complete' }] } ],
+  })).filter(c => withSmith || c.id !== SMITH_ID);
+}
+
+/* ---- deal data (Lesson 3) ---- */
+const DEALS = [
+  ['0888_DEAL_USD_132M', '0888_DEAL_USD_132M'], ['0922 ARR DEAL', '0922 ARR DEAL'], ['3443', '3443'],
+  ['AGENCYFEEDEAL', 'AGENCYFEEDEAL'], ['AGENTED DEAL', 'LA 123456'], ['ANKESH_12345', 'ANKESH_12345'],
+  ['ANOTHER BANK IS AGENT', 'ANOTHERBANKISAGENT'], ['AUTOMATIC MARGIN CHANGES SET UP', 'AUTOMATICMARGIN'],
+  ['AUTOMATIC MARGIN SET UP 7.3', 'AUTOMATIC MARGIN 7.3'], ['BIL DEAL', '5454545454'], ['BILATERAL DEAL', 'BILATERAL DEAL'],
+  ['BILATERAL TEST 2', 'BILATERAL TEST 2'], ['BILL OF EXCHANGE', 'BILL OF EXCHANGE'], ['CORPORATE TERM LOAN', 'CTL 2013'],
+  ['SYNDICATED DEAL 2013', 'SYND 2013'],
+].map(([name, alias]) => ({ name, alias }));
+const OUT_TYPES = ['ALL', 'Amortizing Bankers Acceptance', 'Bankers Acceptance', 'Beneficiary Certificate', 'Bill of Exchange', 'Current Account', 'Deposit', 'Discount Loan', 'Equity Investment', 'Funding Asset', 'Interest Pre-Paid Loan', 'Intraday Loan', 'Loan', 'Non-Loan', 'Repo Loan', 'SBLC/Guarantee'];
+const CTX_ITEMS = ['About BNPP Simulator', 'Close All Windows', 'Window List', 'Contacts', 'FX Calculator', 'RID Select', 'Change Fonts', 'Screen Capture', 'Lock Screen'];
+const DEAL_OPTIONS = ['Auto-Charge / Auto-Gen / Auto-Release', '!Disable Auto-Reduce Expired Facilities', '!Disable Auto-Terminate Facility', '-', '!Change Branch / Proc. Area', '!Change Currency', '!Change OK to Fund Indicator', '!Change HLT Status', '!Change Sole Lender Status', '!Change to Host Bank Deal', 'Circle Select', 'Collateral...', '!Create Amendment...', 'Deal Change Transaction', 'Pricing Change Transaction', '!Deal In Pipeline...', 'Deal Servicing Group Details...', '!Declare Events...', 'Facilities...', 'Bank Group Addressed Notice...', 'Credit Contact Addressed Notice...', '!Lender Copy Transaction', 'Non-Agent Lender Adjustment', 'Non-Business Day Rules', 'Portfolio Positions...', '!Rename Deal...', 'Send Notifications...', 'Servicing Group Change', 'Credit Agreement Description', '!Create Construction Budget'];
+const DEAL_QUERIES = ['Amendment Query', 'Balance Inquiry Report', 'Bank Group Contacts', 'Bills/Payoffs', 'Collateral vs. Group Outstandings', 'Daily Net Inv Calculation', 'Deal Summary Query...', 'Document Tracking...', 'Notices', 'FHAD...', 'Horizontal Lender Query...', 'Lender Query...', 'Lender Shares...', 'Matched Buy/Sell Download...', 'Notepad Entries...', 'Ongoing Fee List...', 'Upfront Fee Activity List...', 'Outstanding Select...', 'Outstandings Query', 'Risk Book Available For Sale', 'Syndication Fee Download...', 'TOW Sheet...', 'Trading Lines...', 'Past Due and Delinquency', 'View Unpaid Amounts', 'Past Due Amounts', '!Issuance Limit Report', 'Exceptions'];
+const FAC_QUERIES = ['Approved Amounts...', 'Bank Group Contacts...', 'Balance Inquiry Report', 'Collateral vs. Group Outstandings...', 'Daily Net Inv Calculation', '!External ID Mapping', 'Notices', 'Facility Type Details', 'Fees and Spreads...', 'Ledger Sheet...', 'Fee Activity List', 'Lender Query...', 'Lender Shares...', 'Ongoing Fee List...', 'Outstanding Select...', 'Risk Book Available For Sale...', 'TOW Sheet...', 'Bills/Payoffs', 'View Unpaid Amounts', 'Past Due Amounts', 'Issuance Limit Report', 'Past Due and Delinquency', 'Exceptions'];
+
+/* ---- remittance instructions data (Module 2) ---- */
+const SMITH_ID = 'SM-20140';
+const FAVORITES = [['Query', 'db'], ['60 MM REVOLVING FACILITY', 'facility'], ['HB AMERICAS', 'person'], ['RATE BASES', 'deal'], ['SMITH BILATERAL WIZARD', 'deal'], ['SMITH CORPORATION', 'person'], ['SMITH_SOLELENDER_1', 'deal'], ['TEST QUERY ITEMS', 'db'], ['TEST QUERY1', 'db'], ['TEST QUERY2', 'db'], ['TEST QUERY3', 'db'], ['TEST QUERY4', 'db'], ['Miller, Max', 'phone']];
+const RI_METHODS = ['Check', 'DANS PAYMENTS', 'DClick test payment method', 'DDA', 'Federal Reserve', 'International Money Transfer', 'Nostro', 'PurushothamPM', 'SANDEEP TEST PAYMENT METHOD', 'Sudha Payment Method'];
+const RI_CODES = { 'Federal Reserve': 'FED', Check: 'CHK', DDA: 'DDA', 'International Money Transfer': 'IMT', Nostro: 'NOS' };
+const RI_WORKFLOW = { 'Awaiting Send To Approval': 'Send to Approval', 'Awaiting Release': 'Release' };
+const ABA_BANKS = [['011000028', 'State St Boston'], ['011000138', 'Fleet Natl Bk'], ['011000206', 'Shawmut Bos'], ['011000390', 'First Bos'], ['011001234', 'Bos Safe Dep'], ['011001438', 'Investors Bk Bos'], ['011001742', 'Baybank Bos'], ['011100805', 'Bk of Bos Conn']];
+const smithNY = s => { const c = s.customers.find(c => c.id === SMITH_ID); return c.profiles[0].locs.find(l => l.name === 'New York, NY'); };
+const riOf = s => { const r = smithNY(s).ris || []; return r[r.length - 1] || {}; };
+
+/* hint helpers for the multi-window simulation */
+const hasWin = (s, t) => s.wins.some(w => w.type === t);
+const winOf = (s, t) => s.wins.find(w => w.type === t);
+const inWin = (t, sel) => `[data-wt="${t}"] ${sel}`;
+const menuHint = (s, t, menu, item) => { const w = winOf(s, t); return w && w.menu === menu ? inWin(t, `[data-sim="witem-${item}"]`) : inWin(t, `[data-sim="wmenu-${menu}"]`); };
+function dealOpenHint(s) {
+  if (s.dialog === 'warning') return '[data-sim="warn-yes"]';
+  if (s.dialog === 'dealList') return s.dlSel === 'BIL DEAL' ? '[data-sim="dl-ok"]' : '[data-sim="drow-BIL DEAL"]';
+  if (s.dialog === 'dealSelect') return '[data-sim="ds-search"]';
+  if (s.left !== 'actions') return '[data-sim="tbActions"]';
+  return '[data-sim="act-Deal"]';
+}
+
+/* ---------------- simulations ---------------- */
+function openCustHint(s, target = 'BORROWER 1') {
+  if (s.dialog === 'warning') return '[data-sim="warn-yes"]';
+  if (s.dialog === 'custList') return s.listSel === B1_ID ? '[data-sim="cl-ok"]' : `[data-sim="row-${target}"]`;
+  if (s.dialog === 'custSelect') return '[data-sim="cs-search"]';
+  if (s.left !== 'actions') return '[data-sim="tbActions"]';
+  return '[data-sim="act-Customer"]';
+}
+const isB1 = s => !!(s.nb && s.nb.cid === B1_ID);
+const benefIdx = s => { const c = s.customers.find(c => c.id === B1_ID); return c.profiles.findIndex(p => p.type === 'Beneficiary'); };
+const benef = s => { const i = benefIdx(s); return i < 0 ? null : s.customers.find(c => c.id === B1_ID).profiles[i]; };
+
+const SIMS = {
+  notebook: {
+    module: 'm1', section: 's1', title: 'Open and explore a Customer Notebook',
+    intro: 'Follow the steps on the live screen. Use “Show me where” if you get stuck.',
+    steps: [
+      { t: 'Open the <b>Actions</b> panel: click the <b>house</b> button in the toolbar.', hint: '[data-sim="tbActions"]', check: s => s.left === 'actions' || s.flags.custSelect },
+      { t: 'Double-click <b>Customer</b> in the Actions list.', hint: '[data-sim="act-Customer"]', check: s => s.flags.custSelect },
+      { t: 'In <b>Customer Select</b>, keep <b>Existing</b>, leave <b>%</b> in the Short Name field and click <b>Search</b>.', hint: s => s.dialog === 'custSelect' ? '[data-sim="cs-search"]' : openCustHint(s), check: s => s.flags.searched || !!s.nb },
+      { t: 'A warning says that <b>%</b> may return many records. Click <b>Yes</b>.', hint: '[data-sim="warn-yes"]', check: s => s.flags.warnYes || !!s.nb },
+      { t: 'Select <b>BORROWER 1</b> in the list, then click <b>OK</b> (or double-click the row).', hint: s => openCustHint(s), check: isB1 },
+      { t: '<b>Title Bar</b>: it shows the notebook (Active Customer) and the customer. Now open the <b>Options</b> menu in the <b>Menu Bar</b>.', hint: '[data-sim="nbmenu-Options"]', check: s => s.flags.nbmenu_Options },
+      { t: '<b>Tabs</b>: open the <b>Personnel</b> tab.', hint: '[data-sim="tab-Personnel"]', check: s => !!(s.nb && s.nb.tab === 'Personnel') },
+      { t: 'The <b>Add</b> and <b>Delete</b> buttons are greyed out because you are in <b>Inquiry mode</b>. Switch to <b>Update mode</b> with the bottom button or press <kbd>F7</kbd>.', hint: '[data-sim="nb-mode"]', check: s => !!(s.nb && s.nb.update) },
+      { t: 'Close the notebook with <b>File › Exit</b>.', hint: s => s.nb && s.nb.menu === 'File' ? '[data-sim="nbitem-Exit"]' : '[data-sim="nbmenu-File"]', check: s => s.flags.nbExit },
+    ],
+  },
+  profiles: {
+    module: 'm1', section: 's2', title: 'Add a profile to a customer',
+    intro: 'BORROWER 1 has Borrower, Guarantor and Lender profiles. Add the fourth one, Beneficiary.',
+    steps: [
+      { t: 'Open the Customer Notebook for <b>BORROWER 1</b> (Actions › Customer › Search › select › OK).', hint: s => openCustHint(s), check: isB1 },
+      { t: 'Open the <b>Profiles</b> tab.', hint: '[data-sim="tab-Profiles"]', check: s => isB1(s) && s.nb.tab === 'Profiles' },
+      { t: 'Switch to <b>Update mode</b> (<kbd>F7</kbd>). <b>Add Profile</b> becomes active.', hint: '[data-sim="nb-mode"]', check: s => isB1(s) && s.nb.update },
+      { t: 'Click <b>Add Profile</b>, choose <b>Beneficiary</b> and click <b>OK</b>.', hint: s => s.dialog === 'addProfile' ? (s.apSel === 'Beneficiary' ? '[data-sim="ap-ok"]' : '[data-sim="ap-Beneficiary"]') : '[data-sim="btn-addProfile"]', check: s => !!benef(s) },
+      { t: 'With the <b>Beneficiary</b> row selected, click <b>Add Location</b> and choose a location.', hint: s => s.dialog === 'form' ? '[data-sim="form-ok"]' : (s.nb && s.nb.sel === String(benefIdx(s)) ? '[data-sim="btn-addLoc"]' : '[data-sim="prow-Beneficiary"]'), check: s => !!(benef(s) && benef(s).locs.length) },
+      { t: 'The new location is <b>Incomplete</b>. Select it and click <b>Complete Location</b>.', hint: s => { const i = benefIdx(s), b = benef(s); const j = b ? b.locs.findIndex(l => l.status !== 'Complete') : 0; return s.nb && s.nb.sel === `${i}-${j}` ? '[data-sim="btn-completeLoc"]' : `[data-sim="lrow-Beneficiary-${Math.max(j,0)}"]`; }, check: s => !!(benef(s) && benef(s).locs.some(l => l.status === 'Complete')) },
+      { t: 'Save your work with <b>File › Save</b>.', hint: s => s.nb && s.nb.menu === 'File' ? '[data-sim="nbitem-Save"]' : '[data-sim="nbmenu-File"]', check: s => s.flags.saved },
+    ],
+  },
+  deal: {
+    module: 'm1', section: 's3', title: 'Navigate a bilateral deal',
+    intro: 'Open BIL DEAL and find its 5 elements. Windows can be dragged by their title bar; click a window to bring it to the front.',
+    steps: [
+      { t: 'Open the <b>Actions</b> panel (house button).', hint: '[data-sim="tbActions"]', check: s => s.left === 'actions' || s.flags.dealSelect },
+      { t: 'Double-click <b>Deal</b> in the Actions list.', hint: '[data-sim="act-Deal"]', check: s => s.flags.dealSelect },
+      { t: 'In <b>Deal Select</b>, keep <b>Existing</b> and <b>Active</b>, leave <b>%</b> and click <b>Search</b>.', hint: dealOpenHint, check: s => s.flags.dealSearched || hasWin(s, 'deal') },
+      { t: 'Confirm the warning with <b>Yes</b>.', hint: dealOpenHint, check: s => s.flags.warnYes || hasWin(s, 'deal') },
+      { t: 'Select <b>BIL DEAL</b> and click <b>OK</b> (or double-click it).', hint: dealOpenHint, check: s => hasWin(s, 'deal') },
+      { t: 'The <b>Title Bar</b> reads <i>Deal Notebook - Closed Deal - BIL DEAL</i>, so the deal is <b>Closed</b>. The Summary tab shows the <b>Borrower</b>. Now open the <b>Pricing Rules</b> tab.', hint: inWin('deal', '[data-sim="wtab-Pricing Rules"]'), check: s => s.flags['tab_deal_Pricing Rules'] },
+      { t: 'Check the <b>Lender</b>: <b>Queries › Lender Query...</b>', hint: s => menuHint(s, 'deal', 'Queries', 'Lender Query...'), check: s => s.flags.lq },
+      { t: 'IQFS LON holds the full 20,000,000.00 USD, so this is a sole lender deal. Click <b>Exit</b> to close the Lender Query.', hint: inWin('lq', '[data-sim="lq-exit"]'), check: s => s.flags.closed_lq },
+      { t: 'Open the <b>Facility</b> list: <b>Options › Facilities...</b>', hint: s => menuHint(s, 'deal', 'Options', 'Facilities...'), check: s => s.flags.facNav },
+      { t: 'In the <b>Facility Navigator</b>, double-click <b>REVOLVER</b> to open the Facility Notebook.', hint: inWin('facNav', '[data-sim="row-REVOLVER"]'), check: s => s.flags.facility },
+      { t: 'Open the facility <b>Pricing</b> tab (interest and fees).', hint: inWin('facility', '[data-sim="wtab-Pricing"]'), check: s => s.flags.tab_facility_Pricing },
+      { t: 'Find the <b>Outstanding</b>: <b>Queries › Outstanding Select...</b>, keep Type <b>Loan</b> and click <b>Search</b>.', hint: s => s.dialog === 'outSelect' ? '[data-sim="os-search"]' : menuHint(s, 'facility', 'Queries', 'Outstanding Select...'), check: s => s.flags.loansWin },
+      { t: 'Double-click the loan <b>BORROWER 100280</b> to open the Loan Notebook.', hint: inWin('loans', '[data-sim="row-BORROWER 100280"]'), check: s => s.flags.loan },
+      { t: 'Many windows are open now. <b>Right-click</b> on the workspace and choose <b>Close All Windows</b>.', hint: s => s.ctx ? '[data-sim="ctx-Close All Windows"]' : null, tip: 'Press the <b>right mouse button</b> anywhere in the grey workspace or on a window.', check: s => s.flags.closeAll },
+    ],
+  },
+  ri1: {
+    module: 'm2', section: 's1', title: 'Create a FED remittance instruction', date: '20-Mar-2014', favorites: FAVORITES,
+    intro: 'Create a Federal Reserve remittance instruction for the Borrower SMITH CORPORATION (location New York, NY), then send it to approval and release it.',
+    steps: [
+      { t: 'Open <b>SMITH CORPORATION</b>: double-click it in the <b>Favorites</b> panel.', hint: s => s.left !== 'favorites' ? '[data-sim="tbHome"]' : '[data-sim="fav-SMITH CORPORATION"]', check: s => (s.nb && s.nb.cid === SMITH_ID) || hasWin(s, 'riList') },
+      { t: 'Open the <b>Profiles</b> tab.', hint: '[data-sim="tab-Profiles"]', check: s => (s.nb && s.nb.cid === SMITH_ID && s.nb.tab === 'Profiles') || hasWin(s, 'riList') },
+      { t: 'Switch the notebook to <b>Update mode</b> (<kbd>F7</kbd>).', hint: '[data-sim="nb-mode"]', check: s => (s.nb && s.nb.update) || hasWin(s, 'riList') },
+      { t: 'Under the <b>Borrower</b> profile, select the location <b>New York, NY</b>.', hint: '[data-sim="lrow-Borrower-2"]', check: s => (s.nb && s.nb.sel === '0-2') || hasWin(s, 'riList') },
+      { t: 'Click <b>Remittance Instructions</b>.', hint: '[data-sim="btn-loc-Remittance Instructions"]', check: s => hasWin(s, 'riList') || s.flags.riDetail },
+      { t: 'In the <b>Remittance List for New York, NY</b>, click <b>Add</b>, keep <b>Add Standard Remittance Instruction</b> and click <b>OK</b>.', hint: s => s.dialog === 'addRI' ? '[data-sim="ari-ok"]' : inWin('riList', '[data-sim="ril-add"]'), check: s => s.flags.riDetail },
+      { t: 'Choose the <b>Method</b>: <b>Federal Reserve</b>.', hint: inWin('riDetail', '[data-sim="ri-method"]'), check: s => riOf(s).method === 'Federal Reserve' },
+      { t: 'Click <b>ABA Number:</b>, select <b>011000138 · Fleet Natl Bk</b> and click <b>OK</b>.', hint: s => s.dialog === 'selectBank' ? (s.bank.sel === '011000138' ? '[data-sim="sb-ok"]' : '[data-sim="bank-011000138"]') : inWin('riDetail', '[data-sim="ri-aba"]'), check: s => riOf(s).aba === '011000138' },
+      { t: '<b>Direction</b>: also tick <b>From Cust</b>, so the instruction works in both directions.', hint: inWin('riDetail', '[data-sim="ri-dirFrom"]'), check: s => riOf(s).dirFrom && riOf(s).dirTo },
+      { t: 'Beneficiary <b>Type</b>: choose <b>Bank Account</b>.', hint: inWin('riDetail', '[data-sim="ri-benType"]'), check: s => riOf(s).benType === 'Bank Account' },
+      { t: 'In <b>Acct #</b>, type <b>456123</b>, then press <kbd>Enter</kbd>.', hint: inWin('riDetail', '[data-sim="ri-acct"]'), check: s => (riOf(s).acct || '').trim() === '456123' },
+      { t: 'In <b>Info</b>, type <b>Account1</b>.', hint: inWin('riDetail', '[data-sim="ri-info"]'), check: s => (riOf(s).info || '').trim() === 'Account1' },
+      { t: 'Save: <b>File › Save</b>. The status becomes <i>Awaiting Send To Approval</i>.', hint: s => menuHint(s, 'riDetail', 'File', 'Save'), check: s => riOf(s).saved },
+      { t: 'Open the <b>Workflow</b> tab.', hint: inWin('riDetail', '[data-sim="wtab-Workflow"]'), check: s => s.flags.tab_riDetail_Workflow },
+      { t: 'Double-click <b>Send to Approval</b>.', hint: inWin('riDetail', '[data-sim="wf-Send to Approval"]'), check: s => ['Awaiting Release', 'Released'].includes(riOf(s).status) },
+      { t: 'Double-click <b>Release</b>. The status becomes <i>Released</i>.', hint: inWin('riDetail', '[data-sim="wf-Release"]'), check: s => riOf(s).status === 'Released' },
+      { t: 'Close the notebook: <b>File › Exit</b>.', hint: s => menuHint(s, 'riDetail', 'File', 'Exit'), check: s => !hasWin(s, 'riDetail') && riOf(s).status === 'Released' },
+      { t: 'The new <b>FED</b> line is in the Remittance List. Click <b>Exit</b>.', hint: inWin('riList', '[data-sim="ril-exit"]'), check: s => !hasWin(s, 'riList') && riOf(s).status === 'Released' },
+    ],
+  },
+};
+
+/* ---------------- helpers ---------------- */
+const app = document.getElementById('app');
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const escRx = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+let VIEW = 'home';
+let S = null;
+
+const LS_KEY = 'bnppsim-progress';
+function loadProg() { try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch (e) { return {}; } }
+function saveProg(p) { try { localStorage.setItem(LS_KEY, JSON.stringify(p)); } catch (e) {} }
+
+function toast(msg) {
+  let el = document.getElementById('toast');
+  if (!el) { el = document.createElement('div'); el.id = 'toast'; document.body.appendChild(el); }
+  el.innerHTML = msg;
+  el.classList.add('show');
+  clearTimeout(toast.t);
+  toast.t = setTimeout(() => el.classList.remove('show'), 4000);
+}
+
+function topbar(crumbs) {
+  return `<header class="top"><div class="wrap top-in">
+    <a href="#/" class="brand">${LOGO}<span><b>BNPP</b> Simulator</span></a>
+    <nav class="crumbs">${crumbs.map((c, i) => (i ? '<span>›</span>' : '') + (c.h ? `<a href="${c.h}">${esc(c.t)}</a>` : `<span>${esc(c.t)}</span>`)).join('')}</nav>
+  </div></header>`;
+}
+
+/* ---------------- home ---------------- */
+function renderHome() {
+  VIEW = 'home';
+  const prog = loadProg();
+  app.innerHTML = `${topbar([])}
+  <section class="hero"><div class="wrap">
+    <div class="kicker">Training platform</div>
+    <h1>Learn Loan IQ by doing</h1>
+    <p>Read short lessons, then launch a realistic simulation and practice each task step by step, with no risk to real data.</p>
+  </div></section>
+  <div class="wrap">
+    <h2 class="h2">Modules</h2>
+    <div class="cards">${MODULES.map(m => {
+      if (!m.available) return `<div class="card off"><div class="num">${m.num}</div><h3>${esc(m.title)}</h3><p>${esc(m.summary)}</p><span class="tag">Coming soon</span></div>`;
+      const sims = m.sections.filter(s => s.sim);
+      const done = sims.filter(s => prog[m.id + '/' + s.id]).length;
+      const pct = sims.length ? Math.round(done / sims.length * 100) : 0;
+      return `<div class="card on" data-a="openModule" data-v="${m.id}">
+        <div class="num">${m.num}</div><h3>${esc(m.title)}</h3><p>${esc(m.summary)}</p>
+        <div class="prog"><div style="width:${pct}%"></div></div>
+        <div class="meta"><span>${m.sections.length} lessons</span><span>${done}/${sims.length} simulations done</span></div>
+      </div>`;
+    }).join('')}</div>
+  </div>`;
+  window.scrollTo(0, 0);
+}
+
+/* ---------------- module ---------------- */
+function renderModule(id, secId) {
+  VIEW = 'module';
+  const m = MODULES.find(x => x.id === id);
+  if (!m || !m.available) { location.hash = '#/'; return; }
+  const prog = loadProg();
+  app.innerHTML = `${topbar([{ t: 'Modules', h: '#/' }, { t: m.title }])}
+  <div class="mod-hero"><div class="wrap"><div class="kicker">Module ${m.num}</div><h1>${esc(m.title)}</h1><p>${esc(m.summary)}</p></div></div>
+  <div class="wrap mod-layout">
+    <nav class="toc"><div class="toc-h">In this module</div>
+      ${m.sections.map(s => `<a data-a="goto" data-v="${s.id}" class="${s.placeholder ? 'ph' : ''}"><small>${s.lesson}</small>${esc(s.title)}${prog[m.id + '/' + s.id] ? ' <span class="ok">✓</span>' : ''}</a>`).join('')}
+    </nav>
+    <main>${m.sections.map(s => sectionHtml(m, s, prog)).join('')}</main>
+  </div>`;
+  if (secId) { const el = document.getElementById('sec-' + secId); if (el) el.scrollIntoView(); else window.scrollTo(0, 0); }
+  else window.scrollTo(0, 0);
+}
+
+function sectionHtml(m, s, prog) {
+  if (s.placeholder) return `<section class="lesson" id="sec-${s.id}"><div class="lesson-kicker">${s.lesson}</div><h2>${esc(s.title)}</h2><div class="bar"></div><p class="placeholder">This lesson's content will be added soon.</p></section>`;
+  const done = prog[m.id + '/' + s.id];
+  return `<section class="lesson" id="sec-${s.id}">
+    <div class="lesson-kicker">${s.lesson}</div><h2>${esc(s.title)}</h2><div class="bar"></div>
+    <div class="prose">${s.html}</div>
+    ${s.quiz ? `<div class="quiz"><div class="quiz-h">Check your knowledge</div>${s.quiz.map((q, qi) => `
+      <div class="q"><p>${qi + 1}. ${q.q}</p><div class="opts">${q.o.map((o, oi) => `<button class="opt" data-a="answer" data-v="${m.id}|${s.id}|${qi}|${oi}">${esc(o)}</button>`).join('')}</div><div class="fb"></div></div>`).join('')}</div>` : ''}
+    ${s.sim ? `<div class="launch">
+      <div><div class="kicker">Practice${done ? ' · <span class="done-tag">✓ Completed</span>' : ''}</div><h4>${esc(s.simTitle)}</h4><p>${esc(s.simDesc)}</p></div>
+      <a class="btn-launch" href="#/sim/${s.sim}">Launch ▶</a>
+    </div>` : ''}
+  </section>`;
+}
+
+const PAGE_ACTIONS = {
+  openModule: v => { location.hash = '#/module/' + v; },
+  goto: v => { const el = document.getElementById('sec-' + v); if (el) el.scrollIntoView({ behavior: 'smooth' }); },
+  answer: (v, t) => {
+    const [mid, sid, qi, oi] = v.split('|');
+    const q = MODULES.find(m => m.id === mid).sections.find(s => s.id === sid).quiz[qi];
+    const box = t.closest('.q');
+    box.querySelectorAll('.opt').forEach(b => b.classList.remove('wrong'));
+    if (+oi === q.a) { t.classList.add('right'); box.querySelector('.fb').textContent = '✓ Correct. ' + (q.why || ''); }
+    else { t.classList.add('wrong'); box.querySelector('.fb').textContent = '✗ Not quite. Try again.'; }
+  },
+};
+
+/* =====================================================================
+   SIMULATION ENGINE
+   ===================================================================== */
+function startSim(id, guided = true) {
+  if (!SIMS[id]) { location.hash = '#/'; return; }
+  VIEW = 'sim';
+  S = {
+    simId: id, guided, left: 'favorites', selAction: null, menu: null, dialog: null,
+    cs: { mode: 'Existing', by: 'Short Name', text: '%' }, listSel: null, listTerm: '%',
+    nb: null, flags: {}, step: 0, hintOn: false, done: false, doneDismissed: false,
+    customers: baseCustomers(SIMS[id].module === 'm2'), form: null, apSel: null, focus: null,
+    wins: [], wid: 0, ctx: null, ds: null, os: null, dlSel: null, dealTerm: '%', warnNext: 'custList', hintJust: false,
+    date: SIMS[id].date || '03-Jul-2013', selFav: null, bank: null, addRIType: 'Standard', addRIFor: null, riSeq: 0,
+  };
+  renderSim();
+}
+
+function cur() { return S.nb && S.customers.find(c => c.id === S.nb.cid); }
+
+function advance() {
+  const steps = SIMS[S.simId].steps;
+  if (S.guided) {
+    const before = S.step;
+    while (S.step < steps.length && steps[S.step].check(S)) S.step++;
+    if (S.step !== before) S.hintOn = false;
+    if (S.step === steps.length && !S.done) { S.done = true; markDone(); }
+  } else if (!S.done && steps.every(st => st.check(S))) { S.done = true; markDone(); }
+}
+function markDone() { const sim = SIMS[S.simId]; const p = loadProg(); p[sim.module + '/' + sim.section] = true; saveProg(p); }
+function update() { advance(); renderSim(); }
+
+function renderSim() {
+  const sim = SIMS[S.simId];
+  app.innerHTML = `<div class="simpage">
+    <div class="simbar">
+      <button class="sb-back" data-a="back">← Back to module</button>
+      <div class="sb-title"><span class="kicker">Simulation</span>${esc(sim.title)}</div>
+      <div class="sb-right">
+        <div class="seg"><button class="${S.guided ? 'on' : ''}" data-a="setGuided" data-v="1">Guided</button><button class="${!S.guided ? 'on' : ''}" data-a="setGuided" data-v="0">Free practice</button></div>
+        <button class="sb-btn" data-a="restart">↺ Restart</button>
+      </div>
+    </div>
+    <div class="simbody">
+      ${tasksPanel()}
+      <div class="desk"><div class="desk-inner">${appWindow()}</div>
+        ${S.done && S.guided && !S.doneDismissed ? `<div class="done-ov"><div class="done-card">
+          <div class="big">✓</div><h3>Simulation complete</h3>
+          <p>You completed all ${sim.steps.length} steps. Well done!</p>
+          <div class="row"><button class="pill pri" data-a="back">Back to module</button><button class="pill" data-a="dismissDone">Keep exploring</button><button class="pill" data-a="restart">Restart</button></div>
+        </div></div>` : ''}
+      </div>
+    </div>
+  </div>`;
+  if (S.hintOn && S.guided) {
+    const st = sim.steps[S.step];
+    if (st) {
+      const sel = typeof st.hint === 'function' ? st.hint(S) : st.hint;
+      const el = sel && document.querySelector(sel);
+      if (el) { el.classList.add('pulse'); el.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
+      else if (S.hintJust) toast(st.tip || 'Follow the instruction of the highlighted step.');
+    }
+  }
+  S.hintJust = false;
+  if (S.focus) { const el = document.querySelector(S.focus); if (el) { el.focus(); if (el.select) el.select(); } S.focus = null; }
+}
+
+function tasksPanel() {
+  const sim = SIMS[S.simId], steps = sim.steps;
+  const doneArr = steps.map((st, i) => S.guided ? i < S.step : st.check(S));
+  const n = doneArr.filter(Boolean).length;
+  return `<aside class="tasks ${S.guided ? '' : 'free'}">
+    <div class="tk-kicker">${S.guided ? 'Guided practice' : 'Free practice'}</div>
+    <div class="tk-prog"><div style="width:${Math.round(n / steps.length * 100)}%"></div></div>
+    <div class="tk-count">${n} / ${steps.length} steps</div>
+    <p class="tk-intro">${S.guided ? sim.intro : 'Explore the screen freely. Goals tick off when you reach them, in any order.'}</p>
+    ${S.done ? '<div class="tk-alldone">✓ All steps completed</div>' : ''}
+    <ol class="tk-list">${steps.map((st, i) => `<li class="${doneArr[i] ? 'done' : ''} ${S.guided && i === S.step ? 'cur' : ''}"><span class="tk-n">${doneArr[i] ? '✓' : i + 1}</span><span>${st.t}</span></li>`).join('')}</ol>
+    ${S.guided && S.step < steps.length ? '<button class="tk-hint" data-a="hint">💡 Show me where</button>' : ''}
+    <div class="tk-keys"><b>Shortcuts</b><br><kbd>F7</kbd> toggles Inquiry / Update mode<br>Double-click opens an item<br><kbd>Esc</kbd> closes a menu or dialog</div>
+  </aside>`;
+}
+
+/* ---------- app window ---------- */
+const MAIN_MENUS = {
+  File: ['Change Password', '-', 'Exit'],
+  Options: ['Preferences', 'User Profile'],
+  Windows: ['Cascade', 'Tile', '!Close All'],
+  Help: ['Contents', 'About BNPP Simulator'],
+};
+
+// kind: 'mm' = main window, 'nb' = customer notebook, 'w' = multi-window engine (wid = window id, sent as "id|name")
+function menuBar(kind, names, menus, open, wid) {
+  const a = { mm: 'menu', nb: 'nbmenu', w: 'wmenu' }[kind], ia = { mm: 'item', nb: 'nbitem', w: 'witem' }[kind];
+  const pre = wid != null ? wid + '|' : '';
+  return names.map(n => `<div class="mi ${open === n ? 'open' : ''}" data-a="${a}" data-v="${pre}${esc(n)}" data-sim="${kind}menu-${esc(n)}">${esc(n)}${open === n && menus[n] ? `<div class="dd">${menus[n].map(it => {
+    if (it === '-') return '<div class="sep"></div>';
+    const dis = it[0] === '!', t = dis ? it.slice(1) : it;
+    return `<div class="ddi ${dis ? 'dis' : ''}" data-a="${dis ? 'noop' : ia}" data-v="${pre}${esc(t)}" data-sim="${kind}item-${esc(t)}">${esc(t)}</div>`;
+  }).join('')}</div>` : ''}</div>`).join('');
+}
+
+const tb = (icon, title, a, active) => `<button class="tbtn ${active ? 'act' : ''}" title="${title}" data-a="${a}" data-sim="${a}">${ICONS[icon]}</button>`;
+
+function appWindow() {
+  return `<div class="appwin">
+    <div class="w-title">${LOGO_SM}<span>BNPP Simulator - Dam1 Dam1 - Business Date: ${S.date}</span><span class="w-ctl"><i>—</i><i>☐</i><i>✕</i></span></div>
+    <div class="w-menu">${menuBar('mm', ['File', 'Options', 'Windows', 'Help'], MAIN_MENUS, S.menu)}</div>
+    <div class="w-tools">
+      <div class="tgroup">${tb('folder', 'Open', 'tbOpen')}${tb('tree', 'Tree view', 'tbTree')}${tb('clock', 'History', 'tbHist')}${tb('home', 'Actions', 'tbActions', S.left === 'actions')}${tb('case', 'Favorites', 'tbHome', S.left === 'favorites')}</div>
+      <div class="tgroup">${tb('wrench', 'Utilities', 'tbNo')}${tb('tri', 'Reports', 'tbNo')}${tb('chart', 'Charts', 'tbNo')}</div>
+      <div class="w-search"><input placeholder="Type to search BNPP Simulator ..." data-bind="search">${ICONS.search}</div>
+      <div class="w-brand">${LOGO}<span><b>BNPP</b> SIMULATOR</span></div>
+    </div>
+    <div class="w-work">
+      <div class="w-tree">${treePanel()}</div>
+      <div class="w-mdi">${S.nb ? notebook() : ''}${S.wins.map(renderWin).join('')}${dialog()}${ctxMenu()}</div>
+    </div>
+    <div class="w-status"><span></span><span>Last Successful Login: 2023-12-19 09:34:55</span><span></span><span>Process List</span><span>Training Environment - 7622</span><span>${S.date}</span></div>
+  </div>`;
+}
+
+function treePanel() {
+  if (S.left === 'favorites') return `
+    <div class="tp-filters"><select><option>All</option></select><select><option>Ascending</option></select><button class="b95" style="min-width:0;padding:0 5px" data-a="noop">↻</button></div>
+    <div class="tree-root">▾ ${ICONS.case.replace('currentColor', '#0B3B2A')} [Favorites]</div>
+    <div class="tree-item"><span class="red-sq"></span>Inbox (0 New)</div>
+    ${(SIMS[S.simId].favorites || []).map(([n, ic]) => `<div class="tree-item ${S.selFav === n ? 'sel' : ''}" data-a="selFav" data-d="openFav" data-v="${esc(n)}" data-sim="fav-${esc(n)}"><svg class="ai" viewBox="0 0 16 16" width="14" height="14" fill="currentColor" aria-hidden="true">${AI[ic]}</svg> ${esc(n)}</div>`).join('')}`;
+  return `<div class="tree-root">▾ ${ICONS.case.replace('currentColor', '#0B3B2A')} [Actions]</div>
+    ${ACTION_LIST.map(n => `<div class="tree-item ${S.selAction === n ? 'sel' : ''}" data-a="selAction" data-d="openAction" data-v="${esc(n)}" data-sim="act-${esc(n)}">${actionIcon(n)} ${esc(n)}</div>`).join('')}`;
+}
+
+/* ---------- notebook ---------- */
+const NB_TABS1 = ['Workflow', 'Additional'];
+const NB_TABS2 = ['General', 'Corporate', 'Risk', 'SIC', 'Bus Terr', 'MIS Codes', 'Personnel', 'Events', 'Pending', 'Comments', 'Profiles'];
+const TAB_INFO = {
+  Workflow: 'workflow items awaiting action for this customer', Additional: 'additional, user-defined customer fields',
+  Corporate: 'corporate information about the customer', Risk: 'risk ratings for the customer', SIC: 'industry classification (SIC) codes',
+  'Bus Terr': 'business territories', 'MIS Codes': 'management information (MIS) codes', Events: 'the history of events recorded on the customer',
+  Pending: 'transactions pending for this customer', Comments: 'comments recorded against the customer',
+};
+
+function notebook() {
+  const c = cur(), nb = S.nb, d = nb.update ? '' : 'disabled';
+  const menus = {
+    File: ['Open', (nb.update ? '' : '!') + 'Save', 'Drop in Folder', '!Delete', '-', 'Exit'],
+    Options: [nb.update ? 'Inquiry' : 'Update', '-', 'Collateral Accounts', 'Contacts', 'Legal Address', 'Remittance Instructions', '!Rename Customer', 'Send Notification', 'Survey', '!Unrestrict Customer', 'Merge Customer', 'Outstandings Limit', '-', 'Paper Clip Transaction', 'Reminders', 'Alerts', 'Lockouts', 'Borrower Credit Limits'],
+    Queries: ['Bills/Payoffs', 'Collateral Events', 'Daily Net Inv Calculation', 'Deals as Borrower', 'Deals as Borrower With Exposure', 'Deals as Lender', 'Deals as Guarantor', 'Deals as Executing Agency', 'Document Tracking', 'Notepad Entries', 'Notices', 'Portfolio Positions', 'Outstandings by Borrower/Creditor', '!FpML Lender Query', '-', 'Customer Hierarchy', 'Paper Clip Transactions', 'Past Due and Delinquency', '-', 'Collections History'],
+    Accounting: ['!Create Bill', '!Create Payoff Statement'],
+  };
+  const tabBtn = n => `<button class="tab ${n === 'Comments' ? 'hl' : ''} ${nb.tab === n ? 'on' : ''}" data-a="tab" data-v="${n}" data-sim="tab-${n}">${n}</button>`;
+  let body;
+  if (nb.tab === 'General') body = genTab(c, d);
+  else if (nb.tab === 'Personnel') body = persTab(c, d);
+  else if (nb.tab === 'Profiles') body = profTab(c, d);
+  else body = `<div class="ph-tab"><b>${nb.tab} tab</b>In the real application this tab holds ${TAB_INFO[nb.tab]}.<br>It is not covered in this lesson.</div>`;
+  return `<div class="nbwin">
+    <div class="nb-title" data-sim="nb-title">${LOGO_SM}<span>Active Customer -- ${esc(c.short)}</span><button class="nb-x" data-a="nbclose" title="Close">✕</button></div>
+    <div class="w-menu">${menuBar('nb', ['File', 'Options', 'Queries', 'Accounting', 'Instant Message'], menus, nb.menu)}</div>
+    <div class="nb-tabs"><div class="trow">${NB_TABS1.map(tabBtn).join('')}</div><div class="trow">${NB_TABS2.map(tabBtn).join('')}</div></div>
+    <div class="nb-body">${body}</div>
+    <div class="nb-foot"><button class="modebtn ${nb.update ? 'upd' : ''}" data-a="toggleMode" data-sim="nb-mode">Notebook in ${nb.update ? 'Update' : 'Inquiry'} Mode - F7</button><span class="nb-kind">-- Customer Notebook</span></div>
+  </div>`;
+}
+
+const selF = (f, opts, val, d) => `<select ${d} data-f="${f}">${opts.map(o => `<option ${o === val ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
+
+function genTab(c, d) {
+  return `<div class="gen">
+    <div class="g-left">
+      <div class="fr"><label class="blue">Customer ID:</label><span class="ro">${esc(c.id)}</span></div>
+      <div class="fr"><label>Bank:</label><span class="ro">${esc(c.bank)}</span></div>
+      <div class="fr"><label>Short Name:</label><input ${d} data-f="short" value="${esc(c.short)}"></div>
+      <div class="fr ta"><label>Legal Name:</label><textarea ${d} data-f="legal">${esc(c.legal)}</textarea></div>
+    </div>
+    <div class="g-right">
+      <div class="fr"><label>Status:</label><select disabled><option>${esc(c.status)}</option></select></div>
+      <div class="fr"><label>Branch:</label>${selF('branch', BRANCHES, c.branch, d)}</div>
+      <div class="fr"><label>Prospect:</label>${selF('prospect', ['', 'Yes', 'No'], c.prospect, d)}</div>
+      <div class="fr"><label>Language:</label>${selF('language', ['', 'English', 'French'], c.language, d)}</div>
+      <div class="fr"><label>Notice Type Preference:</label>${selF('notice', ['Faxes/Emails Only', 'Faxes Only', 'Emails Only', 'Mail'], c.notice, d)}</div>
+    </div>
+  </div>
+  <fieldset class="box"><legend>Aliases</legend><div class="al">
+    <div class="grid"><div class="gh" style="grid-template-columns:150px 1fr"><span>Alias Type</span><span>Alias Name</span></div>
+      ${c.aliases.map((a, i) => `<div class="gr ${S.nb.aliasSel === i ? 'sel' : ''}" style="grid-template-columns:150px 1fr" data-a="aliasSel" data-v="${i}"><span>${esc(a.type)}</span><span>${esc(a.name)}</span></div>`).join('')}</div>
+    <div class="al-btns"><button class="b95" ${d} data-a="aliasAdd">Add</button><button class="b95" ${d || (S.nb.aliasSel == null ? 'disabled' : '')} data-a="aliasDel">Delete</button></div>
+  </div></fieldset>
+  <div class="codes">
+    <div class="cr"><button class="b95" ${d} data-a="lookup" data-v="Expense Code">Expense Code</button><input disabled value="${esc(c.expCode)}" style="width:80px"><input disabled value="${esc(c.expDesc)}" style="flex:1"></div>
+    <div class="cr"><button class="b95" ${d} data-a="lookup" data-v="Department">Department</button><input disabled value="${esc(c.dept)}" style="width:80px"><input disabled value="${esc(c.deptDesc)}" style="flex:1"></div>
+    <div class="cr"><button class="b95" ${d} data-a="lookup" data-v="Classification">Classification</button><input disabled value="${esc(c.classification)}" style="flex:1"></div>
+  </div>
+  <label class="chk" style="justify-content:center;margin-top:6px"><input type="checkbox" ${d} data-f="broker" ${c.broker ? 'checked' : ''}> Broker</label>`;
+}
+
+function persTab(c, d) {
+  const cols = 'grid-template-columns:180px 1fr 120px';
+  return `<div class="ph-row"><span class="red">* = Default</span><span class="grn">Drill Down for Details</span></div>
+    <div class="grid tall"><div class="gh" style="${cols}"><span>User Name</span><span>Role</span><span>Access Level</span></div>
+      ${c.personnel.map((p, i) => `<div class="gr ${S.nb.persSel === i ? 'sel' : ''}" style="${cols}" data-a="persSel" data-v="${i}"><span>${esc(p.user)}</span><span>${esc(p.role)}</span><span>${esc(p.access)}</span></div>`).join('')}</div>
+    <div class="btnrow"><button class="b95" ${d} data-a="persAdd">Add</button><button class="b95" ${d || (S.nb.persSel == null ? 'disabled' : '')} data-a="persDel">Delete</button><span style="flex:1"></span><button class="b95" data-a="persUser">User</button></div>`;
+}
+
+function profTab(c, d) {
+  const nb = S.nb, cols = 'grid-template-columns:1fr 200px';
+  const [pi, li] = (nb.sel || '').split('-');
+  const selP = nb.sel != null ? c.profiles[+pi] : null;
+  const selL = selP && li != null ? selP.locs[+li] : null;
+  const rows = c.profiles.map((p, i) => `
+    <div class="gr ${nb.sel === String(i) ? 'sel' : ''}" style="${cols}" data-a="profSel" data-v="${i}" data-sim="prow-${esc(p.type)}"><span>${esc(p.type)}</span><span>${esc(p.status)}</span></div>
+    ${p.locs.map((l, j) => `<div class="gr loc ${nb.sel === `${i}-${j}` ? 'sel' : ''}" style="${cols}" data-a="profSel" data-v="${i}-${j}" data-sim="lrow-${esc(p.type)}-${j}"><span>&nbsp;&nbsp;... ${esc(l.name)}</span><span>${l.status ? '... ' + esc(l.status) : ''}</span></div>`).join('')}`).join('');
+  const en = ok => ok ? '' : 'disabled';
+  return `<div class="ph-row"><label class="chk"><input type="checkbox" ${d}> Third Party Recipient Only</label><span class="grn">Drill down for details</span></div>
+    <div class="grid tall"><div class="gh" style="${cols}"><span>Profile</span><span>Status</span></div>${rows}</div>
+    <div class="pbtns">
+      <button class="b95" ${en(nb.update)} data-a="addProfile" data-sim="btn-addProfile">Add Profile</button>
+      <button class="b95" ${en(nb.update && selP)} data-a="addLoc" data-sim="btn-addLoc">Add Location</button>
+      <button class="b95" ${en(nb.update && selP)} data-a="profDel">Delete</button>
+      <button class="b95" ${en(nb.update && selL && selL.status !== 'Complete')} data-a="completeLoc" data-sim="btn-completeLoc">Complete Location</button>
+      <button class="b95" ${en(selL)} data-a="locBtn" data-v="Addresses">Addresses</button>
+      <button class="b95" ${en(selL)} data-a="locBtn" data-v="Faxes">Faxes</button>
+      <button class="b95" ${en(selL)} data-a="locBtn" data-v="Contacts">Contacts</button>
+      <button class="b95" ${en(selL)} data-a="locBtn" data-v="Remittance Instructions" data-sim="btn-loc-Remittance Instructions">Remittance Instructions</button>
+      <span></span><span></span>
+      <button class="b95" ${en(selL)} data-a="locBtn" data-v="Personnel">Personnel</button>
+      <button class="b95" ${en(selL)} data-a="locBtn" data-v="Servicing Groups">Servicing Groups</button>
+    </div>`;
+}
+
+/* ---------- dialogs ---------- */
+const dlg = (title, body, style = '') => `<div class="shade"></div><div class="dlg" style="${style}">${title ? `<div class="dlg-t">${LOGO_SM}<span>${esc(title)}</span></div>` : ''}<div class="dlg-b">${body}</div></div>`;
+
+function dialog() {
+  switch (S.dialog) {
+    case 'custSelect': return dlg('Customer Select', `
+      <div class="cs-radio"><label><input type="radio" name="csm" ${S.cs.mode === 'New' ? 'checked' : ''} data-a="csMode" data-v="New"> New</label><label><input type="radio" name="csm" ${S.cs.mode === 'Existing' ? 'checked' : ''} data-a="csMode" data-v="Existing"> Existing</label></div>
+      <div class="cs-row"><label class="blue">Identify By:</label>
+        <select data-bind="cs.by">${['Short Name', 'Customer ID', 'Legal Name'].map(o => `<option ${o === S.cs.by ? 'selected' : ''}>${o}</option>`).join('')}</select>
+        <input data-bind="cs.text" data-sim="cs-text" value="${esc(S.cs.text)}"></div>
+      <div style="padding-left:96px"><button class="b95" data-a="csFilter">Status Filter</button></div>
+      <div class="dlg-btns" style="margin-top:46px"><button class="b95" data-a="csOk" data-sim="cs-ok">OK</button><button class="b95" data-a="csSearch" data-sim="cs-search">Search</button><button class="b95" data-a="csCancel">Cancel</button></div>`, 'width:496px');
+    case 'warning': return dlg('', `
+      <div class="wrn"><div class="wicon">?</div><div><div class="wt">WARNING</div>
+      <p>The search string entered has the potential of returning a large number of records.</p><p>Do you wish to continue?</p></div></div>
+      <div class="dlg-btns"><button class="b95" data-a="warnYes" data-sim="warn-yes">Yes</button><button class="b95" data-a="warnNo">No</button></div>`, 'width:420px');
+    case 'custList': {
+      const cols = 'grid-template-columns:200px 200px 1fr';
+      const list = matchCustomers(S.listTerm);
+      return dlg('Customer List By ' + S.cs.by, `
+        <div class="cl-search"><label>Search:</label><input readonly value="${esc(S.listTerm)}" style="width:240px"></div>
+        <div class="grid" style="height:200px"><div class="gh" style="${cols}"><span>Short Name</span><span>Legal Name</span><span>Customer ID</span></div>
+          ${list.map(c => `<div class="gr ${S.listSel === c.id ? 'sel' : ''}" style="${cols}" data-a="listSel" data-d="listOpen" data-v="${esc(c.id)}" data-sim="row-${esc(c.short)}"><span>${esc(c.short)}</span><span>${esc(c.legal)}</span><span>${esc(c.id)}</span></div>`).join('')}</div>
+        <div class="dlg-btns" style="justify-content:flex-start;margin-top:12px"><button class="b95" data-a="clOk" data-sim="cl-ok">OK</button><button class="b95" data-a="clCancel">Cancel</button></div>`, 'width:600px');
+    }
+    case 'addProfile': {
+      const have = cur().profiles.map(p => p.type);
+      return dlg('Select Profile Type', `<div class="ap-list">${['Borrower', 'Lender', 'Guarantor', 'Beneficiary'].map(t => {
+        const dis = have.includes(t);
+        return `<label class="${dis ? 'dis' : ''}"><input type="radio" name="ap" ${dis ? 'disabled' : ''} ${S.apSel === t ? 'checked' : ''} data-a="apSel" data-v="${t}" data-sim="ap-${t}"> ${t}${dis ? ' (already exists)' : ''}</label>`;
+      }).join('')}</div>
+      <div class="dlg-btns"><button class="b95" data-a="apOk" data-sim="ap-ok">OK</button><button class="b95" data-a="closeDlg">Cancel</button></div>`, 'width:300px');
+    }
+    case 'form': return dlg(S.form.title, `<div class="fm">${S.form.fields.map(f => `<div class="fr"><label>${esc(f.label)}:</label>${f.opts
+        ? `<select data-bind="form.${f.k}">${f.opts.map(o => `<option ${o === S.form.vals[f.k] ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`
+        : `<input data-bind="form.${f.k}" value="${esc(S.form.vals[f.k])}" data-sim="form-${f.k}">`}</div>`).join('')}</div>
+      <div class="dlg-btns"><button class="b95" data-a="formOk" data-sim="form-ok">OK</button><button class="b95" data-a="closeDlg">Cancel</button></div>`, 'width:380px');
+    case 'dealSelect': {
+      const r = (name, list, cur) => list.map(o => `<label class="chk"><input type="radio" name="${name}" ${cur === o ? 'checked' : ''} data-a="${name}" data-v="${o}"> ${o}</label>`).join('');
+      return dlg('Deal Select', `
+      <div style="display:flex;gap:30px;justify-content:center"><div class="os-box" style="width:120px">${r('dsMode', ['New', 'Existing', 'Use Wizards', 'Mass Sale'], S.ds.mode)}</div><div class="os-box" style="width:110px">${r('dsStatus', ['Active', 'Inactive', 'Both'], S.ds.status)}</div></div>
+      <div class="cs-row" style="margin-top:30px"><label class="blue">Identify By:</label><select data-bind="ds.by">${['Name', 'Alias'].map(o => `<option ${o === S.ds.by ? 'selected' : ''}>${o}</option>`).join('')}</select><input data-bind="ds.text" data-sim="ds-text" value="${esc(S.ds.text)}"></div>
+      <div class="dlg-btns" style="margin-top:40px"><button class="b95" data-a="dsOk" data-sim="ds-ok">OK</button><button class="b95" data-a="dsSearch" data-sim="ds-search">Search</button><button class="b95" data-a="closeDlg">Cancel</button></div>`, 'width:520px');
+    }
+    case 'dealList': {
+      const cols = 'grid-template-columns:1fr 1fr';
+      return dlg('Deal List By ' + S.ds.by, `
+        <div class="cl-search"><label>Search:</label><input readonly value="${esc(S.dealTerm)}" style="flex:1"></div>
+        <div class="grid blue-list" style="height:240px"><div class="gh" style="${cols}"><span>Name</span><span>Alias</span></div>
+          ${matchDeals(S.dealTerm).map(dl => `<div class="gr ${S.dlSel === dl.name ? 'sel' : ''}" style="${cols}" data-a="dlSel" data-d="dlOpen" data-v="${esc(dl.name)}" data-sim="drow-${esc(dl.name)}"><span>${esc(dl.name)}</span><span>${esc(dl.alias)}</span></div>`).join('')}</div>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:12px"><button class="b95" data-a="dlOk" data-sim="dl-ok">OK</button><button class="b95" data-a="dlCancel">Cancel</button><span class="red" style="margin-left:auto">* indicates deal is restricted</span></div>`, 'width:560px');
+    }
+    case 'outSelect': {
+      const o = S.os;
+      return dlg('Outstanding Select', `
+      <div style="display:flex;gap:10px;justify-content:center">
+        <div class="os-box">${['New', 'Existing', 'Pending Transactions', 'Cancelled Transactions'].map(m => `<label class="chk"><input type="radio" name="osm" ${o.mode === m ? 'checked' : ''} data-a="osMode" data-v="${m}"> ${m}</label>`).join('')}</div>
+        <div class="os-box">${[['active', 'Active'], ['inactive', 'Inactive'], ['pending', 'Pending']].map(([k, l]) => `<label class="chk"><input type="checkbox" ${o[k] ? 'checked' : ''} data-a="osChk" data-v="${k}"> ${l}</label>`).join('')}</div>
+      </div>
+      <div class="kv" style="margin:22px 16px 0;grid-template-columns:100px 1fr">
+        <label>Type:</label><select data-bind="os.type">${OUT_TYPES.map(t => `<option ${t === o.type ? 'selected' : ''}>${t}</option>`).join('')}</select>
+        <label>Search By:</label><select data-bind="os.by">${['Deal/Facility', 'Alias', 'Borrower'].map(t => `<option ${t === o.by ? 'selected' : ''}>${t}</option>`).join('')}</select>
+        <label><button class="b95 lb" data-a="lookup" data-v="Deal">Deal:</button></label><input readonly value="BIL DEAL">
+        <label>Facility:</label><select><option>REVOLVER</option></select>
+      </div>
+      <div class="dlg-btns" style="margin-top:30px"><button class="b95" data-a="osSearch" data-sim="os-search">Search</button><button class="b95" data-a="closeDlg">Cancel</button></div>`, 'width:400px');
+    }
+    case 'addRI': return dlg('Add Remittance Instruction', `
+      <fieldset class="box"><legend><b>Remittance Instruction Type</b></legend>
+        ${[['Standard', 'Add Standard Remittance Instruction'], ['Simplified', 'Add Simplified IMT Remittance Instruction']].map(([k, l]) => `<label class="chk" style="padding:3px 0"><input type="radio" name="ari" ${S.addRIType === k ? 'checked' : ''} data-a="ariType" data-v="${k}"> ${l}</label>`).join('')}
+      </fieldset>
+      <div class="dlg-btns"><button class="b95" data-a="ariOk" data-sim="ari-ok">OK</button><button class="b95" data-a="closeDlg">Cancel</button></div>`, 'width:340px');
+    case 'selectBank': {
+      const b = S.bank, cols = 'grid-template-columns:120px 1fr';
+      const list = ABA_BANKS.filter(([c, ds]) => (b.by === 'Code' ? c : ds).toUpperCase().startsWith(b.q.trim().toUpperCase()));
+      return dlg('Select Bank', `
+      <fieldset class="box" style="width:430px;margin:0 auto"><legend>Search/Sort By:</legend><div style="display:flex;gap:16px;justify-content:center">${['Code', 'Description'].map(k => `<label class="chk"><input type="radio" name="sb" ${b.by === k ? 'checked' : ''} data-a="sbBy" data-v="${k}"> ${k}</label>`).join('')}</div></fieldset>
+      <div class="fr" style="justify-content:center;margin:8px 0"><span>Search by ${b.by.toLowerCase()}:</span><input data-bind="bank.q" data-live="1" value="${esc(b.q)}" style="width:360px;flex:none"></div>
+      <div class="grid" style="height:170px"><div class="gh" style="${cols}"><span>Code</span><span>Description</span></div>
+        ${list.map(([c, ds]) => `<div class="gr ${b.sel === c ? 'sel' : ''}" style="${cols}" data-a="sbSel" data-d="sbOpen" data-v="${c}" data-sim="bank-${c}"><span>${c}</span><span>${ds}</span></div>`).join('')}</div>
+      <div style="display:flex;gap:10px;margin-top:10px"><button class="b95" data-a="sbOk" data-sim="sb-ok">OK</button><button class="b95" data-a="closeDlg">Cancel</button></div>`, 'width:680px');
+    }
+    case 'exitConfirm': return dlg('', `
+      <div class="wrn"><div class="wicon">?</div><div><div class="wt">QUESTION</div><p>Save changes to ${esc(cur().short)} before closing the notebook?</p></div></div>
+      <div class="dlg-btns"><button class="b95" data-a="exitYes">Yes</button><button class="b95" data-a="exitNo">No</button><button class="b95" data-a="closeDlg">Cancel</button></div>`, 'width:380px');
+  }
+  return '';
+}
+
+/* =====================================================================
+   MULTI-WINDOW ENGINE (Lesson 3+)
+   Each open window is an object in S.wins ({id, type, x, y, w, h, tab, menu, update, ...}).
+   The last item of S.wins is the front (active) window. WIN[type] describes how to draw it.
+   ===================================================================== */
+const getWin = id => S.wins.find(w => w.id === +id);
+const topWin = () => S.wins[S.wins.length - 1];
+const splitV = v => { const i = v.indexOf('|'); return [+v.slice(0, i), v.slice(i + 1)]; };
+function focusWin(id) {
+  const i = S.wins.findIndex(w => w.id === id);
+  if (i < 0 || i === S.wins.length - 1) return false;
+  S.wins.push(S.wins.splice(i, 1)[0]);
+  return true;
+}
+function openWin(type, props = {}) {
+  const ex = S.wins.find(w => w.type === type && w.key === props.key); // key = several windows of one type (e.g. one RI per window)
+  if (ex) { focusWin(ex.id); return ex; }
+  const d = WIN[type];
+  const w = { id: ++S.wid, type, x: d.x, y: d.y, w: d.w, h: d.h, tab: d.tab || null, menu: null, update: false, ...props };
+  S.wins.push(w);
+  return w;
+}
+function closeWin(id) { const w = getWin(id); if (!w) return; S.wins = S.wins.filter(x => x !== w); S.flags['closed_' + w.type] = true; }
+function toggleWinMode(w) {
+  if (!w || !WIN[w.type].mode) return;
+  w.update = !w.update;
+  toast(w.update ? 'Notebook is now in <b>Update mode</b>. You can enter or modify data.' : 'Notebook is back in <b>Inquiry mode</b> (view only).');
+}
+function closeAll() { S.wins = []; S.nb = null; S.dialog = null; S.flags.closeAll = true; toast('All windows closed.'); }
+function ctxMenu() {
+  if (!S.ctx) return '';
+  return `<div class="ctx" style="left:${S.ctx.x}px;top:${S.ctx.y}px">${CTX_ITEMS.map(t => `<div class="ddi" data-a="ctx" data-v="${t}" data-sim="ctx-${t}">${t}</div>`).join('')}</div>`;
+}
+const amt = (label, val, wid) => `<div class="fr"><label>${wid ? `<button class="b95 lb" data-a="wbtn" data-v="${wid}|${esc(label)}">${esc(label)}</button>` : esc(label)}</label><span class="amt">${val}</span></div>`;
+const phTab = (tab, what) => `<div class="ph-tab"><b>${esc(tab)} tab</b>This ${what} tab is not covered in this lesson.</div>`;
+
+function winFrame(w, o) {
+  const top = topWin() === w;
+  const tabBtn = n => `<button class="tab ${w.tab === n ? 'on' : ''}" data-a="wtab" data-v="${w.id}|${esc(n)}" data-sim="wtab-${esc(n)}">${esc(n)}</button>`;
+  let rows = '';
+  if (o.tabs) { // like the real app, the row holding the active tab moves to the bottom
+    const r = o.tabs.slice(), i = r.findIndex(x => x.includes(w.tab));
+    if (i >= 0) r.push(r.splice(i, 1)[0]);
+    rows = `<div class="nb-tabs">${r.map(x => `<div class="trow">${x.map(tabBtn).join('')}</div>`).join('')}</div>`;
+  }
+  return `<div class="xwin ${top ? 'front' : ''}" data-win="${w.id}" data-wt="${w.type}" style="left:${w.x}px;top:${w.y}px;width:${w.w}px;height:${w.h}px;z-index:${10 + S.wins.indexOf(w)}">
+    <div class="nb-title" data-drag="${w.id}">${LOGO_SM}<span>${esc(o.title)}</span><button class="nb-x" data-a="wclose" data-v="${w.id}" title="Close">✕</button></div>
+    ${o.menus ? `<div class="w-menu">${menuBar('w', Object.keys(o.menus), o.menus, w.menu, w.id)}</div>` : ''}
+    ${rows}
+    <div class="xbody">${o.body}</div>
+    ${o.kind ? `<div class="nb-foot"><button class="modebtn ${w.update ? 'upd' : ''}" data-a="wmode" data-v="${w.id}" data-sim="wmode">Notebook in ${w.update ? 'Update' : 'Inquiry'} Mode - F7</button><span class="nb-kind">-- ${o.kind}</span></div>` : ''}
+  </div>`;
+}
+function renderWin(w) { const d = WIN[w.type]; return winFrame(w, { title: d.title(w), ...d.frame(w) }); }
+
+const WIN = {
+  deal: {
+    x: 12, y: 6, w: 840, h: 596, tab: 'Summary', mode: true,
+    title: () => 'Deal Notebook - Closed Deal - BIL DEAL',
+    frame: w => ({
+      kind: 'Deal Notebook',
+      menus: { File: ['Open', (w.update ? '' : '!') + 'Save', '-', 'Exit'], Options: [w.update ? 'Inquiry' : 'Update', ...DEAL_OPTIONS], Status: null, Queries: DEAL_QUERIES, Distribution: null, Accounting: null, Payments: null, 'Instant Message': null },
+      tabs: [['Pricing Comment', 'Admin/Event Fees', 'Fees', 'Bank Roles', 'Ratios/Conds', 'Pricing Rules'], ['Summary', 'Personnel', 'Risk/Regulatory', 'Workflow', 'Pending', 'Other Products', 'Events', 'Comments', 'Restrictions', 'MIS Codes', 'Additional', 'Calendars']],
+      body: w.tab === 'Summary' ? dealSummary(w) : w.tab === 'Pricing Rules' ? dealPricingRules(w) : phTab(w.tab, 'deal'),
+    }),
+  },
+  lq: { x: 120, y: 70, w: 700, h: 460, title: () => 'Lender Query - Closed Deal (BIL DEAL)', frame: w => ({ body: lqBody(w) }) },
+  facNav: { x: 12, y: 8, w: 660, h: 320, title: () => 'Facility Navigator - BIL DEAL in USD', frame: w => ({ body: facNavBody(w) }) },
+  facility: {
+    x: 150, y: 50, w: 715, h: 556, tab: 'Summary', mode: true,
+    title: () => 'Facility - REVOLVER In Closed Deal - BIL DEAL in USD',
+    frame: w => ({
+      kind: 'Facility Notebook',
+      menus: { File: ['Open', (w.update ? '' : '!') + 'Save', '-', 'Exit'], Options: [w.update ? 'Inquiry' : 'Update'], Queries: FAC_QUERIES, Accounting: null, 'Instant Message': null },
+      tabs: [['MIS Codes', 'Pricing', 'Pricing Rules', 'Workflow', 'Past Due Pricing'], ['Summary', 'Types/Purpose', 'Sublimit/Cust', 'Risk', 'Restrictions', 'Pending', 'Events', 'Comments', 'Codes', 'Additional', 'Cleanup/Draw']],
+      body: w.tab === 'Summary' ? facSummary(w) : w.tab === 'Pricing' ? facPricing(w) : phTab(w.tab, 'facility'),
+    }),
+  },
+  loans: { x: 10, y: 10, w: 720, h: 440, title: () => 'Existing Loans For Facility: BIL DEAL/REVOLVER', frame: w => ({ body: loansBody(w) }) },
+  loan: {
+    x: 80, y: 36, w: 790, h: 570, tab: 'General', mode: true,
+    title: () => 'Libor Option Loan (BORROWER 100280) / Active',
+    frame: w => ({
+      kind: 'Loan Notebook',
+      menus: { File: [(w.update ? '' : '!') + 'Save', '-', 'Exit'], Options: [w.update ? 'Inquiry' : 'Update'], Queries: null, Accounting: null, 'Instant Message': null },
+      tabs: [['General', 'Rates', 'Events', 'Pending', 'Workflow', 'Accrual', 'Codes', 'Additional', 'Comments', 'Calendars', 'Exporter Interest', 'Exporter Accrual', 'Fee Pricing']],
+      body: w.tab === 'General' ? loanGeneral(w) : phTab(w.tab, 'loan'),
+    }),
+  },
+};
+
+/* ---- Remittance Instructions windows (Module 2) ---- */
+Object.assign(WIN, {
+  riList: {
+    x: 40, y: 110, w: 760, h: 330, mode: true,
+    title: w => 'Remittance List for ' + w.loc.name,
+    frame: w => ({ body: riListBody(w) }),
+    action(w, t) {
+      if (t === 'Add') { S.dialog = 'addRI'; S.addRIType = 'Standard'; S.addRIFor = w.id; return; }
+      if (t === 'Delete') {
+        const ri = w.loc.ris[w.sel];
+        if (ri && ri.status === 'Released') { toast('A released remittance instruction cannot be deleted here.'); return; }
+        w.loc.ris.splice(w.sel, 1); w.sel = null; return;
+      }
+      return false;
+    },
+  },
+  riDetail: {
+    x: 14, y: 8, w: 830, h: 560, tab: 'General', mode: true,
+    title: w => `Remittance Instructions Detail--Type: ${w.ri.method} / ${w.ri.status}`,
+    frame: w => ({
+      kind: 'Remittance Instructions Notebook',
+      menus: { File: ['Open', (w.update && w.ri.status !== 'Released' ? '' : '!') + 'Save', (w.ri.saved ? '' : '!') + 'Delete', 'Exit'], Options: [w.update ? 'Inquiry' : 'Update'], Status: null, 'Instant Message': null },
+      tabs: [['General', 'Locations', 'Events', 'Pending', 'Workflow', 'Comments']],
+      body: w.tab === 'General' ? riGeneral(w) : w.tab === 'Workflow' ? riWorkflow(w) : phTab(w.tab, 'remittance instruction'),
+    }),
+    action(w, t) {
+      if (t === 'ABA Number:') { S.bank = { by: 'Code', q: '', sel: null, wid: w.id }; S.dialog = 'selectBank'; return; }
+      if (t === 'Save') { riSave(w); return; }
+      if (t === 'Open') { toast('Open the remittance instruction from the Remittance List.'); return; }
+      if (t === 'Delete') { w.loc.ris.splice(w.loc.ris.indexOf(w.ri), 1); closeWin(w.id); toast('Remittance instruction deleted.'); return; }
+      return false;
+    },
+  },
+});
+
+const riProduct = ri => [ri.allLoan && 'Loan', ri.sblc && 'SBLC'].filter(Boolean).join('/');
+const riDir = ri => ri.dirFrom && ri.dirTo ? 'Both' : ri.dirFrom ? 'From' : ri.dirTo ? 'To' : '';
+const riBal = ri => [ri.balP && 'P', ri.balI && 'I', ri.balF && 'F'].filter(Boolean).join('/');
+
+function openRIList() {
+  const [pi, li] = S.nb.sel.split('-'), c = cur(), loc = c.profiles[+pi].locs[+li];
+  loc.ris = loc.ris || [];
+  openWin('riList', { key: c.id + '|' + loc.name, loc, update: S.nb.update });
+}
+
+function riListBody(w) {
+  const cols = 'grid-template-columns:55px 80px 85px 50px 55px 110px 50px 170px 110px 1fr';
+  const heads = ['Mthd', 'Simplified', 'Product', 'Dir', 'Bal', 'Account No', 'CCY', 'Status', 'Description', 'Auto Do It'];
+  return `<div class="grn" style="font-size:14px;margin-bottom:4px">Drill down to view details</div>
+  <div class="grid" style="height:190px"><div style="min-width:880px"><div class="gh" style="${cols}">${heads.map(h => `<span>${h}</span>`).join('')}</div>
+    ${w.loc.ris.map((ri, i) => `<div class="gr ${w.sel === i ? 'sel' : ''}" style="${cols}" data-a="riSel" data-d="riOpen" data-v="${w.id}|${i}" data-sim="ri-row-${i}"><span>${RI_CODES[ri.method] || ''}</span><span></span><span>${riProduct(ri)}</span><span>${riDir(ri)}</span><span>${riBal(ri)}</span><span>${esc(ri.acct)}</span><span>${esc(ri.ccy)}</span><span>${esc(ri.status)}</span><span>${esc(ri.desc)}</span><span>${ri.autoDoIt ? 'Y' : 'N'}</span></div>`).join('')}
+  </div></div>
+  <div style="display:flex;align-items:center;gap:14px;margin-top:12px">
+    <button class="modebtn ${w.update ? 'upd' : ''}" style="width:150px;white-space:nowrap" data-a="wmode" data-v="${w.id}">In ${w.update ? 'Update' : 'Inquiry'} Mode - F7</button>
+    <span style="flex:1"></span>
+    <button class="b95" ${w.update ? '' : 'disabled'} data-a="wbtn" data-v="${w.id}|Add" data-sim="ril-add">Add</button>
+    <button class="b95" ${w.update && w.sel != null ? '' : 'disabled'} data-a="wbtn" data-v="${w.id}|Delete">Delete</button>
+    <button class="b95" data-a="wbtn" data-v="${w.id}|Exit" data-sim="ril-exit">Exit</button>
+    <span style="flex:.7"></span>
+  </div>`;
+}
+
+function riGeneral(w) {
+  const ri = w.ri, d = !w.update || ri.status === 'Released' ? 'disabled' : '';
+  const f = k => `data-rif="${w.id}|${k}"`;
+  const ck = (k, l) => `<label class="chk"><input type="checkbox" ${d} ${ri[k] ? 'checked' : ''} ${f(k)} data-sim="ri-${k}"> ${l}</label>`;
+  const opts = (list, v) => `<option></option>${list.map(o => `<option ${o === v ? 'selected' : ''}>${esc(o)}</option>`).join('')}`;
+  const fed = ri.method === 'Federal Reserve';
+  return `<div style="display:grid;grid-template-columns:380px 1fr;gap:16px">
+  <div>
+    <div class="fr"><label class="blue" style="width:90px">Method:</label><select ${d} ${f('method')} data-sim="ri-method" style="width:260px;flex:none;font-size:14px;height:24px">${opts(RI_METHODS, ri.method)}</select></div>
+    <div class="fr"><label class="blue" style="width:90px">Description:</label><input ${ri.method ? d : 'disabled'} ${f('desc')} value="${esc(ri.desc)}" style="width:210px;flex:none"></div>
+    ${fed ? `
+    <div class="fr" style="margin-top:6px"><label style="width:100px;text-align:left"><button class="b95 lb" ${d} data-a="wbtn" data-v="${w.id}|ABA Number:" data-sim="ri-aba">ABA Number:</button></label><input disabled value="${esc(ri.aba)}" style="width:150px;flex:none;height:26px"></div>
+    <div class="fr"><label class="blue" style="width:100px">Bank:</label><span>${esc(ri.bank)}</span></div>
+    <fieldset class="box" style="margin-top:36px"><legend>Bank to Bank Instructions</legend><textarea ${d} ${f('b2b')} style="width:260px;height:90px">${esc(ri.b2b)}</textarea></fieldset>`
+    : ri.method ? '<p style="color:#777;margin-top:30px">The fields of this method are not simulated. Choose <b>Federal Reserve</b> for this exercise.</p>' : ''}
+  </div>
+  <div>
+    <div style="display:flex;gap:8px">
+      <fieldset class="box" style="width:140px"><legend>Product</legend>${ck('allLoan', 'All Loan Types')}<div style="height:14px"></div>${ck('sblc', 'SBLC/BA')}</fieldset>
+      <fieldset class="box" style="width:105px"><legend>Direction</legend>${ck('dirFrom', 'From Cust')}<div style="height:14px"></div>${ck('dirTo', 'To Cust')}</fieldset>
+      <fieldset class="box" style="width:95px"><legend>Balance</legend>${ck('balP', 'Principal')}${ck('balI', 'Interest')}${ck('balF', 'Fees')}</fieldset>
+    </div>
+    <div class="fr" style="justify-content:flex-end;gap:6px;margin-right:30px"><span class="blue">Currency:</span><select ${d} ${f('ccy')} style="width:66px;flex:none">${opts(['USD', 'EUR', 'GBP'], ri.ccy)}</select><button class="b95" data-a="wbtn" data-v="${w.id}|Included Fees">Included Fees</button></div>
+    ${fed ? `
+    <div style="margin:0 0 8px">Beneficiary</div>
+    <div class="fr"><label class="blue" style="width:70px">Acct #:</label><input ${d} ${f('acct')} data-sim="ri-acct" value="${esc(ri.acct)}" style="width:225px;flex:none;height:26px"></div>
+    <div class="fr"><label class="blue" style="width:70px">Type:</label><select ${d} ${f('benType')} data-sim="ri-benType" style="width:228px;flex:none">${opts(['Bank Account', 'Customer Account', 'Third Party Account'], ri.benType)}</select></div>
+    <div class="fr ta"><label class="blue" style="width:70px">Info:</label><textarea ${d} ${f('info')} data-sim="ri-info" style="width:250px;height:80px;flex:none">${esc(ri.info)}</textarea></div>
+    <label class="chk" style="margin:10px 0 0 110px;font-size:13.5px"><input type="checkbox" ${d} ${f('autoDoIt')} ${ri.autoDoIt ? 'checked' : ''}> Auto Do It</label>` : ''}
+    <label class="chk" style="margin:${fed ? '8px' : '200px'} 0 0 250px;color:#888"><input type="checkbox" disabled ${ri.status === 'Released' ? 'checked' : ''}> Approved</label>
+  </div></div>
+  <div class="blue" style="text-align:right;margin-top:10px;padding-right:220px">Primary Processing Area:</div>`;
+}
+
+function riWorkflow(w) {
+  const it = RI_WORKFLOW[w.ri.status], cols = 'grid-template-columns:1fr 1fr';
+  return `<div style="text-align:center;font-size:20px;color:#1d3f8f">Workflow Items</div>
+  <div class="grn" style="text-align:center;margin:2px 0 8px">Drill down to perform Workflow item</div>
+  <div class="grid" style="height:300px"><div class="gh" style="${cols}"><span>Workflow Item</span><span>Target Date</span></div>
+    ${it ? `<div class="gr ${w.wfSel ? 'sel' : ''}" style="${cols}" data-a="wfSel" data-d="wfDo" data-v="${w.id}" data-sim="wf-${it}"><span>${it}</span><span>${S.date}</span></div>` : ''}
+  </div>
+  ${w.ri.status === 'Released' ? '<p class="grn" style="text-align:center">No workflow items left: the remittance instruction is released.</p>' : ''}`;
+}
+
+function riSave(w) {
+  const ri = w.ri;
+  const err = ri.method !== 'Federal Reserve' ? 'Select the Method <b>Federal Reserve</b>.'
+    : !ri.aba ? 'Select the <b>ABA Number</b>.'
+    : !ri.ccy ? 'Select a <b>Currency</b>.'
+    : !(ri.dirFrom || ri.dirTo) ? 'Select at least one <b>Direction</b>.'
+    : !ri.benType ? 'Select the beneficiary <b>Type</b>.'
+    : !ri.acct.trim() ? 'Enter the beneficiary <b>Acct #</b>.' : '';
+  if (err) { toast('Cannot save. ' + err); return; }
+  if (ri.status === 'Pending') ri.status = 'Awaiting Send To Approval';
+  ri.saved = true;
+  toast('Remittance instruction saved. Continue on the <b>Workflow</b> tab.');
+}
+
+function wfDo(w) {
+  const ri = w.ri;
+  if (ri.status === 'Awaiting Send To Approval') { ri.status = 'Awaiting Release'; toast('Sent to approval. Next workflow item: <b>Release</b>.'); }
+  else if (ri.status === 'Awaiting Release') { ri.status = 'Released'; toast('Remittance instruction <b>released</b>.'); }
+  w.wfSel = false;
+}
+
+function pickBank() {
+  const b = S.bank, w = getWin(b.wid), row = ABA_BANKS.find(r => r[0] === b.sel);
+  if (!row) { toast('Select a bank first.'); return; }
+  if (w) { w.ri.aba = row[0]; w.ri.bank = row[1]; }
+  S.dialog = null;
+}
+
+// text/checkbox/select fields of the RI notebook write straight into the RI object
+function riField(t) {
+  const [id, k] = splitV(t.dataset.rif), w = getWin(id);
+  if (!w) return;
+  const val = t.type === 'checkbox' ? t.checked : t.value;
+  if (w.ri[k] === val) return;
+  w.ri[k] = val;
+  if (k === 'method') {
+    if (val === 'Federal Reserve') { if (!w.ri.desc) w.ri.desc = 'FED2'; if (!w.ri.ccy) w.ri.ccy = 'USD'; }
+    update();
+  } else refreshTasks();
+}
+// re-checks the steps and redraws only the task panel (keeps the cursor in the field being typed in)
+function refreshTasks() {
+  advance();
+  if (S.done && S.guided && !S.doneDismissed) { renderSim(); return; }
+  const el = document.querySelector('.tasks');
+  if (el) el.outerHTML = tasksPanel();
+}
+
+function dealSummary(w) {
+  const d = w.update ? '' : 'disabled', cols = 'grid-template-columns:24px 1fr 90px 40px';
+  return `<fieldset class="box" style="width:560px"><legend>Borrowers / Depositors</legend>
+    <div style="display:flex;gap:10px"><div style="flex:1">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px"><span class="grn">Drill down to view details</span><button class="b95" disabled>Make Primary...</button></div>
+      <div class="grid" style="height:50px"><div class="gh" style="${cols}"><span></span><span>Name</span><span>Borrower</span><span>Dep</span></div>
+        <div class="gr" style="${cols}" data-a="wbtn" data-v="${w.id}|Borrower details"><span>*</span><span>BORROWER 1</span><span>Y</span><span>N</span></div></div>
+    </div><div class="al-btns" style="padding-top:26px"><button class="b95" ${d} data-a="wbtn" data-v="${w.id}|Add borrower">Add...</button><button class="b95" ${d} data-a="wbtn" data-v="${w.id}|Delete borrower">Delete</button></div></div>
+  </fieldset>
+  <div class="cols">
+    <div>
+      <div class="fr"><label>Alias:</label><span>5454545454</span></div>
+      <div class="fr"><label><button class="b95 lb" disabled>Deal Classification</button></label><span class="ro-in" style="flex:1">Acquisition</span></div>
+      <div class="fr"><label><button class="b95 lb" data-a="wbtn" data-v="${w.id}|Admin Agent">Admin Agent</button></label><span class="ro-in" style="flex:1">IQFS LON</span></div>
+      <div class="fr"><label>Closed Date:</label><input ${d} value="29-Apr-2013" style="width:92px;flex:none"></div>
+      <div class="fr"><label>Agreement Date:</label><input ${d} value="29-Apr-2013" style="width:92px;flex:none"></div>
+      <div class="fr"><label>Currency:</label><span>USD</span></div>
+      <div class="fr"><label>Facility Add Cutoff</label><input ${d} style="width:92px;flex:none"></div>
+    </div>
+    <div>
+      <label class="chk" style="margin:30px 0 8px 130px"><input type="checkbox" disabled> Sole Lender</label>
+      <div class="fr"><label style="width:150px">Projected Close Date:</label><input ${d} style="width:92px;flex:none"></div>
+      <div class="fr" style="margin-top:40px"><label style="width:100px"><button class="b95 lb" disabled>ISIN/CUSIP</button></label><input disabled style="width:80px;flex:none"><input disabled style="width:80px;flex:none"><label class="chk" style="width:auto"><input type="checkbox" disabled> Unlisted</label></div>
+    </div>
+  </div>
+  <div class="cols">
+    <fieldset class="box"><legend>Global Deal Amounts</legend>
+      <div class="fr"><label>Proposed Cmt:</label><input ${d} class="amt" value="20,000,000.00" style="width:130px;flex:none"></div>
+      ${amt('Closing Cmt:', '20,000,000.00')}${amt('Current Cmt:', '20,000,000.00')}
+    </fieldset>
+    <fieldset class="box"><legend>Host Bank Share Amounts</legend>
+      ${amt('Proposed Cmt:', '20,000,000.00')}${amt('Closing Cmt:', '20,000,000.00')}${amt('Contr. Gross:', '20,000,000.00')}${amt('Net Cmt:', '20,000,000.00')}
+    </fieldset>
+  </div>
+  <button class="b95" data-a="wbtn" data-v="${w.id}|Commitment Summary By CCY">Commitment Summary By CCY</button>`;
+}
+
+function dealPricingRules(w) {
+  const d = w.update ? '' : 'disabled';
+  const ck = (t, on) => `<label class="chk"><input type="checkbox" disabled ${on ? 'checked' : ''}> ${t}</label>`;
+  const btns = (a, b) => `<div class="al-btns" style="gap:20px;padding-top:12px"><button class="b95" ${d} style="width:116px" data-a="wbtn" data-v="${w.id}|${a}">${a}</button><button class="b95" ${d} data-a="wbtn" data-v="${w.id}|${b}">${b}</button></div>`;
+  return `<fieldset class="box"><legend>Allowed Pricing Options</legend><div class="grn">Drill down to update</div>
+    <div style="display:flex;gap:26px"><div class="grid" style="width:350px;height:96px"><div class="gh" style="grid-template-columns:1fr"><span>Option</span></div><div class="gr sel" style="grid-template-columns:1fr"><span>Libor Option</span></div></div>${btns('Add Option', 'Delete Option')}</div></fieldset>
+  <div class="opts-grid">
+    <div class="fr"><span>Consolidation Type:</span><select disabled style="width:120px"><option>CONSOLIDATED</option></select></div>${ck('Autochange to Non Performing')}<div class="fr"><span>Circle Settlement</span><select disabled style="width:70px"><option>Actual</option></select></div>
+    ${ck('Reserve Adjusted Rates')}${ck('Past Due Based on Billed')}<div class="fr"><span>Grace Period:</span><input disabled value="0" class="amt" style="width:60px"></div>
+  </div>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin:4px 0">${ck('Autocharge Prepayment Penalty Fees')}<span>Include In XML Bill</span>${ck('Do Not Print')}${ck('Do Not Mail')}${ck('Bill Care-Of Contact')}</div>
+  <div style="display:flex;gap:14px;align-items:center;margin:4px 0">${ck('Autoapply Penalty Spread when Past Due')}<button class="b95" data-a="wbtn" data-v="${w.id}|History">History</button></div>
+  ${ck('Penalty Spread Application based on Past Due Grace Days', true)}
+  <fieldset class="box" style="margin-top:10px"><legend>Fee Pricing Rules</legend><div class="grn">Drill down to update</div>
+    <div style="display:flex;gap:26px"><div class="grid" style="width:350px;height:76px"><div class="gh" style="grid-template-columns:1fr 100px"><span>Fee</span><span>Type</span></div><div class="gr sel" style="grid-template-columns:1fr 100px"><span>Available</span><span>Facility</span></div></div>${btns('Add Fee', 'Delete Fee')}</div></fieldset>`;
+}
+
+function lqBody(w) {
+  const cols = 'grid-template-columns:330px 80px 1fr';
+  const row = (a, b, c, extra = '') => `<div class="gr" style="${cols}" ${extra}><span>${a}</span><span>${b}</span><span class="amt">${c}</span></div>`;
+  return `<div style="font-size:14px;padding:2px 4px"><span class="blue">Admin Agent:</span> IQFS LON</div>
+  <div class="grn" style="text-align:center;margin:20px 0 4px">Expand once to show aggregate facility positions and again to show circles</div>
+  <div class="grid" style="height:250px"><div class="gh" style="${cols}"><span>Lender</span><span>CCY</span><span style="text-align:right">Contractual Gross</span></div>
+    ${row((w.exp ? '▾ ' : '▸ ') + 'IQFS LON', 'USD', '20,000,000.00', `data-a="lqToggle" data-v="${w.id}" data-sim="lq-row"`)}
+    ${w.exp ? row('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;REVOLVER', 'USD', '20,000,000.00') : ''}
+    ${row('', '====', '======================')}
+    ${row('Totals:', 'USD', '20,000,000.00')}
+  </div>
+  <div class="btn-grid" style="grid-template-columns:repeat(6,1fr)">
+    ${['Expand All', 'Collapse All', 'Refresh', 'Filters', 'Risk Book', 'Print/Export', 'Add Circle', 'Add Outs Asg', '', 'Show Zero Pos.', 'Horiz. Query', 'Exit'].map(b => b ? `<button class="b95" data-a="wbtn" data-v="${w.id}|${b}" ${b === 'Exit' ? 'data-sim="lq-exit"' : ''}>${b}</button>` : '<span></span>').join('')}
+  </div>`;
+}
+
+function facNavBody(w) {
+  const cols = 'grid-template-columns:190px 90px 60px 1fr 1fr';
+  return `<div class="grn" style="margin-bottom:4px">Drill down to open the facility notebook</div>
+  <div class="grid" style="height:130px"><div class="gh" style="${cols}"><span>Name</span><span>Status</span><span>CCY</span><span style="text-align:right">Global Closing Cmt</span><span style="text-align:right">Global Current Cmt</span></div>
+    <div class="gr ${w.sel ? 'sel' : ''}" style="${cols}" data-a="facSel" data-d="facOpen" data-v="${w.id}" data-sim="row-REVOLVER"><span>REVOLVER</span><span>Active</span><span>USD</span><span class="amt">20,000,000.00</span><span class="amt">20,000,000.00</span></div>
+    <div class="gr" style="${cols}"><span>=================</span><span>=======</span><span>=====</span><span class="amt">==============</span><span class="amt">==============</span></div>
+    <div class="gr" style="${cols}"><span>TOTAL:</span><span></span><span></span><span class="amt">20,000,000.00</span><span class="amt">20,000,000.00</span></div>
+  </div>
+  <div class="btn-grid" style="grid-template-columns:repeat(3,1fr);padding:0 30px">
+    ${['Portfolio Positions...', 'Outstanding Select...', 'Outstandings...', 'Lender Shares...', 'Browse Pricing...', 'Amortization Schedule...', 'Add', 'Fees and Spreads...', 'Ongoing Fees', 'Print', 'Export', 'Exit'].map(b => `<button class="b95" data-a="wbtn" data-v="${w.id}|${b}">${b}</button>`).join('')}
+  </div>`;
+}
+
+function facSummary(w) {
+  const d = w.update ? '' : 'disabled';
+  const ck = t => `<label class="chk"><input type="checkbox" disabled> ${t}</label>`;
+  const date = (l, v) => `<div class="fr"><label>${l}</label><input ${d} value="${v}" style="width:92px;flex:none"></div>`;
+  return `<div class="fr" style="justify-content:center"><span class="blue">SNC</span><select disabled style="width:290px;flex:none"><option></option></select></div>
+  <div class="cols">
+    <div class="kv" style="grid-template-columns:110px 1fr"><label>Class:</label><span></span><label>Name:</label><span>REVOLVER</span><label>Type:</label><span>Revolver</span><label>Subtype:</label><span></span><label>FCN:</label><span>00000079</span></div>
+    <div style="display:flex;flex-direction:column;gap:5px">${ck('Override SNC')}<div><span class="blue">Currency:</span> USD</div>${ck('Outstanding Lender Shares Based On Availability')}${ck('Multi-Currency Facility')}</div>
+  </div>
+  <div class="fr" style="margin-top:6px"><button class="b95" ${d} data-a="wbtn" data-v="${w.id}|Main SG">Main SG</button><span>IQFS LON / ADMIN</span></div>
+  <div class="fr"><span class="blue">Transaction Summary Statement:</span><select disabled style="width:150px;flex:none"><option>Loan</option></select></div>
+  <div class="cols">
+    <fieldset class="box"><legend>Global Facility Amounts</legend>
+      <div class="fr"><label>Proposed Cmt:</label><input ${d} class="amt" value="20,000,000.00" style="width:130px;flex:none"></div>
+      <div class="fr"><label>Closing Cmt:</label><input ${d} class="amt" value="20,000,000.00" style="width:130px;flex:none"></div>
+      ${amt('Current Cmt:', '20,000,000.00')}${amt('Outstandings:', '1,000,000.00', w.id)}${amt('Avail To Draw:', '19,000,000.00', w.id)}
+    </fieldset>
+    <fieldset class="box"><legend>Host Bank Share Gross Amounts</legend>
+      ${amt('Proposed Cmt:', '20,000,000.00')}${amt('Closing Cmt:', '20,000,000.00')}${amt('Contr. Gross:', '20,000,000.00')}${amt('Outstandings:', '1,000,000.00', w.id)}${amt('Avail To Draw:', '19,000,000.00')}
+    </fieldset>
+    <fieldset class="box"><legend>Dates</legend>
+      ${date('Agreement:', '29-Apr-2013')}${date('Effective:', '29-Apr-2013')}${date('Expiry:', '29-Apr-2020')}${date('Final Maturity:', '29-Apr-2020')}
+    </fieldset>
+    <fieldset class="box"><legend>Host Bank Share Net Amounts</legend>
+      ${amt('Net Cmt:', '20,000,000.00')}${amt('Fundable Cmt:', '20,000,000.00')}${amt('Outstandings (Funded):', '1,000,000.00', w.id)}${amt('Avail To Draw', '19,000,000.00')}
+    </fieldset>
+  </div>`;
+}
+
+function facPricing(w) {
+  const d = w.update ? '' : 'disabled';
+  const b = (t, upd) => `<button class="b95" ${upd ? d : ''} data-a="wbtn" data-v="${w.id}|${t}">${t}</button>`;
+  return `<div class="fr">${b('Level:')}<span>REVOLVER</span></div>
+  <div style="display:flex;gap:10px;align-items:center">${b('Modify Ongoing Fees', true)}<span style="flex:1"></span>${b('Fee Pricing History')}${b('Ongoing Fees Zoom')}</div>
+  <div style="padding:6px 0 10px 24px;line-height:1.6">Facility Ongoing Fee - Available (Released)<br><span style="padding-left:16px">Available &nbsp;X Rate (2%)</span><br>Free Form Event Fee - Breakfunding<br><span style="padding-left:16px">Global Current &nbsp;X Rate (2%)</span></div>
+  <div class="fr">${b('Level:')}<span>REVOLVER</span></div>
+  <div style="display:flex;gap:10px;align-items:center">${b('Modify Interest Pricing', true)}<span style="flex:1;text-align:center"><span class="blue">Split Tiered:</span> No</span>${b('Interest Pricing History')}${b('Interest Pricing Zoom')}</div>
+  <div style="padding:6px 0 10px 24px;line-height:1.6">Libor Option:<br><span style="padding-left:16px">LIBO &nbsp;+ Spread (2%)</span></div>
+  <fieldset class="box" style="width:540px"><legend>Penalty Spread</legend>
+    <div style="display:flex;justify-content:space-between">
+      <div class="kv"><label>Rate:</label><span style="color:#777">0.000000%</span><label>Status:</label><span>OFF</span><label>Past Due Grace Days:</label><input ${d} value="0" class="amt" style="width:40px"><label>Earliest Past Due Date:</label><span></span></div>
+      <div class="al-btns"><button class="b95" disabled>Modify</button>${b('History')}</div>
+    </div>
+    <div class="os-box" style="flex-direction:row;gap:40px;margin-top:6px"><label class="chk"><input type="radio" disabled checked> All Loans</label><label class="chk"><input type="radio" disabled> Floating Rate Loans Only</label></div>
+  </fieldset>`;
+}
+
+function loansBody(w) {
+  const cols = 'grid-template-columns:130px 95px 55px 100px 110px 110px 45px 95px 100px';
+  const heads = ['Alias', 'Pricing Option', 'Status', 'Borrower', 'Current Amount', 'Original Amount', 'CCY', 'Effective Date', 'Repricing Date'];
+  return `<div style="display:flex;justify-content:space-around;margin:4px 0 10px">
+    <label class="chk"><input type="checkbox" ${w.remain ? 'checked' : ''} data-a="loansOpt" data-v="${w.id}|remain"> Remain open after making selection</label>
+    <label class="chk"><input type="checkbox" ${w.openUpd ? 'checked' : ''} data-a="loansOpt" data-v="${w.id}|openUpd"> Open notebook in update mode</label></div>
+  <div style="display:flex;gap:10px;justify-content:center"><button class="b95" data-a="wbtn" data-v="${w.id}|Payment">Payment</button><button class="b95" data-a="wbtn" data-v="${w.id}|Increase">Increase</button></div>
+  <div class="grn" style="text-align:center;margin:8px 0 4px">Drill down to open the notebook</div>
+  <div class="grid" style="height:220px"><div style="min-width:850px"><div class="gh" style="${cols}">${heads.map(h => `<span>${h}</span>`).join('')}</div>
+    <div class="gr ${w.sel ? 'sel' : ''}" style="${cols}" data-a="loanSel" data-d="loanOpen" data-v="${w.id}" data-sim="row-BORROWER 100280"><span>BORROWER 100280</span><span>Libor Option</span><span>Active</span><span>BORROWER 1</span><span class="amt">1,000,000.00</span><span class="amt">1,000,000.00</span><span>USD</span><span>3-Jul-2013</span><span>5-Aug-2013</span></div></div></div>
+  <div style="display:flex;justify-content:space-between;margin-top:10px;padding:0 90px">${['Print', 'Exit', 'Create Repricing'].map(b => `<button class="b95" data-a="wbtn" data-v="${w.id}|${b}">${b}</button>`).join('')}</div>`;
+}
+
+function loanGeneral(w) {
+  const d = w.update ? '' : 'disabled';
+  const kv = rows => `<div class="kv">${rows.map(([l, v]) => `<label>${l}</label><span>${v}</span>`).join('')}</div>`;
+  const inp = (v, wd = 92) => `<input ${d} value="${v}" style="width:${wd}px">`;
+  const sel = (v, wd = 150) => `<select ${d} style="width:${wd}px"><option>${v}</option></select>`;
+  return `<div class="cols" style="grid-template-columns:1.05fr 1fr">
+  <div>
+    ${kv([['Deal:', 'BIL DEAL'], [`<button class="b95 lb" data-a="wbtn" data-v="${w.id}|Facility:">Facility:</button>`, 'REVOLVER'], ['Borrower:', 'BORROWER 1'], ['Processing Area:', 'Commercial Loan Division'], ['Alias:', 'BORROWER 100280'], ['Contract ID:', inp('RILUWTDFEXBT', 160)], ['<button class="b95 lb" disabled>Sublimit:</button>', ''], ['<button class="b95 lb" disabled>Risk Type:</button>', 'Loan']])}
+    <fieldset class="box" style="margin-top:10px"><legend>Loan Amounts</legend>
+      ${kv([['Global Original:', inp('1,000,000.00', 120)], ['Global Current:', '1,000,000.00'], ['Host Bank Gross:', '1,000,000.00'], ['Host Bank Net:', '1,000,000.00'], ['&nbsp;', ''], ['Global YTD Borrower', '0.00'], ['Currency:', 'USD']])}
+      <label class="chk" style="margin-top:4px"><input type="checkbox" disabled> Accrue On Schedule Balance</label>
+    </fieldset>
+    ${kv([['Past Due Grace Days:', inp('0', 40)], ['Performing Status:', 'Accrual']])}
+  </div>
+  <div>
+    <div class="fr"><button class="b95" data-a="wbtn" data-v="${w.id}|Borrower Servicing Group">Borrower Servicing Group</button><span>AGENT/DEPT</span></div>
+    ${kv([['Pricing Option:', 'LIBOR'], ['Effective Date:', inp('03-Jul-2013')], ['Repricing Frequency:', sel('1 Months', 110)], ['Repricing Date:', '05-Aug-2013'], ['Int. Cycle Freq:', sel('1 Months', 110)], ['Actual Due Date:', inp('05-Aug-2013')], ['Adjusted Due Date:', inp('05-Aug-2013')], ['Accrue:', sel('to the adjusted due date', 170)], ['Accrue From:', sel('Effective Date', 170)], ['Accrual End Date:', inp('04-Aug-2013')], ['', '<label class="chk"><input type="checkbox" disabled> Synchronize Billing</label>'], ['Rate Setting Due Date:', inp('01-Jul-2013')]])}
+    <div style="text-align:right;margin-top:6px"><button class="b95" data-a="wbtn" data-v="${w.id}|History...">History...</button></div>
+  </div></div>`;
+}
+
+// What a menu item or button does inside a multi-window notebook/list
+function winAction(w, t) {
+  if (WIN[w.type].action && WIN[w.type].action(w, t) !== false) return; // window-specific behavior first
+  switch (t) {
+    case 'Exit': closeWin(w.id); return;
+    case 'Update': case 'Inquiry': toggleWinMode(w); return;
+    case 'Save': toast('Changes saved.'); return;
+    case 'Open': openDealSelect(); return;
+    case 'Lender Query...': openWin('lq'); S.flags.lq = true; return;
+    case 'Facilities...': openWin('facNav'); S.flags.facNav = true; return;
+    case 'Facility:': openFacility(); return;
+    case 'Outstanding Select...': case 'Outstandings...': case 'Outstandings:': case 'Outstandings (Funded):': openOutSelect(); return;
+    case 'Expand All': w.exp = true; return;
+    case 'Collapse All': w.exp = false; return;
+    case 'Refresh': toast('Refreshed.'); return;
+  }
+  notSimulated(t.replace(/[.:]+$/, ''));
+}
+
+function openDealSelect() { S.dialog = 'dealSelect'; S.flags.dealSelect = true; S.ds = { mode: 'Existing', status: 'Active', by: 'Name', text: '%' }; S.dlSel = null; S.focus = '[data-sim="ds-text"]'; }
+function matchDeals(term) {
+  if (S.ds.status === 'Inactive') return [];
+  const f = S.ds.by === 'Alias' ? 'alias' : 'name';
+  const rx = term.includes('%') ? new RegExp('^' + term.split('%').map(escRx).join('.*') + '$', 'i') : new RegExp('^' + escRx(term), 'i');
+  return DEALS.filter(d => rx.test(d[f]));
+}
+function dealSearch(isOk) {
+  if (S.ds.mode !== 'Existing') { toast('Select <b>Existing</b> to open a deal.'); return; }
+  const term = S.ds.text.trim();
+  if (!term) { toast('Enter a value to search for.'); return; }
+  S.flags.dealSearched = true; S.dealTerm = term;
+  const list = matchDeals(term);
+  if (isOk) {
+    const f = S.ds.by === 'Alias' ? 'alias' : 'name';
+    const ex = list.find(d => d[f].toUpperCase() === term.toUpperCase());
+    if (ex) { openDeal(ex.name); return; }
+  }
+  if (term.replace(/%/g, '').length < 2) { S.warnNext = 'dealList'; S.dialog = 'warning'; return; }
+  if (!list.length) { toast(`No deal matches “${esc(term)}”.`); return; }
+  S.dialog = 'dealList'; S.dlSel = null;
+}
+function openDeal(name) {
+  if (name !== 'BIL DEAL') { toast('Only <b>BIL DEAL</b> is set up in this simulation. Please select BIL DEAL.'); return; }
+  S.dialog = null; openWin('deal');
+}
+function openFacility() { openWin('facility'); S.flags.facility = true; }
+function openOutSelect() { S.os = { mode: 'Existing', active: true, inactive: false, pending: false, type: 'Loan', by: 'Deal/Facility' }; S.dialog = 'outSelect'; }
+function outSearch() {
+  const o = S.os;
+  if (o.mode !== 'Existing') { toast('Select <b>Existing</b> to find existing outstandings.'); return; }
+  if (!o.active || !['Loan', 'ALL'].includes(o.type)) { toast('No matching outstandings found for BIL DEAL/REVOLVER. Try Type <b>Loan</b> with <b>Active</b> checked.'); return; }
+  S.dialog = null; openWin('loans', { remain: true, openUpd: false }); S.flags.loansWin = true;
+}
+
+/* ---------- logic ---------- */
+function fieldOf(c) { return S.cs.by === 'Customer ID' ? c.id : S.cs.by === 'Legal Name' ? c.legal : c.short; }
+function matchCustomers(term) {
+  const rx = term.includes('%') ? new RegExp('^' + term.split('%').map(escRx).join('.*') + '$', 'i') : new RegExp('^' + escRx(term), 'i');
+  return S.customers.filter(c => rx.test(fieldOf(c))).sort((a, b) => fieldOf(a).localeCompare(fieldOf(b)));
+}
+function openCustSelect() { S.dialog = 'custSelect'; S.flags.custSelect = true; S.cs = { mode: 'Existing', by: 'Short Name', text: '%' }; S.focus = '[data-sim="cs-text"]'; }
+function doSearch(isOk) {
+  if (S.cs.mode === 'New') { toast('Creating a new customer is covered in a later lesson. Select <b>Existing</b>.'); return; }
+  const term = S.cs.text.trim();
+  if (!term) { toast('Enter a value to search for.'); return; }
+  S.flags.searched = true;
+  S.listTerm = term;
+  if (isOk) {
+    const exact = S.customers.filter(c => fieldOf(c).toUpperCase() === term.toUpperCase());
+    if (exact.length === 1) { openNotebook(exact[0].id); return; }
+  }
+  if (term.replace(/%/g, '').length < 2) { S.warnNext = 'custList'; S.dialog = 'warning'; return; }
+  if (!matchCustomers(term).length) { toast(`No customer matches “${esc(term)}”.`); return; }
+  S.dialog = 'custList'; S.listSel = null;
+}
+function openNotebook(id) { S.nb = { cid: id, tab: 'General', update: false, menu: null, sel: null, dirty: false, aliasSel: null, persSel: null }; S.dialog = null; }
+function toggleMode() {
+  if (!S.nb || S.dialog) return;
+  S.nb.update = !S.nb.update;
+  toast(S.nb.update ? 'Notebook is now in <b>Update mode</b>. You can enter or modify data.' : 'Notebook is back in <b>Inquiry mode</b> (view only).');
+}
+function closeNb() { S.nb = null; S.dialog = null; S.flags.nbExit = true; }
+function tryExit() { if (S.nb.dirty) S.dialog = 'exitConfirm'; else closeNb(); }
+function openForm(title, fields, ok) {
+  const vals = {}; fields.forEach(f => vals[f.k] = f.opts ? f.opts[0] : '');
+  S.form = { title, fields, vals, ok }; S.dialog = 'form';
+  const txt = fields.find(f => !f.opts); if (txt) S.focus = `[data-sim="form-${txt.k}"]`;
+}
+const notSimulated = v => toast(`“${esc(v)}” opens another window in the real application. It is not simulated here.`);
+
+const SIM_ACTIONS = {
+  noop() {},
+  back() { const sim = SIMS[S.simId]; location.hash = `#/module/${sim.module}/${sim.section}`; },
+  restart() { const g = S.guided; startSim(S.simId, g); },
+  setGuided(v) { S.guided = v === '1'; S.hintOn = false; S.doneDismissed = true; },
+  hint() { S.hintOn = true; S.hintJust = true; },
+  dismissDone() { S.doneDismissed = true; },
+  menu(v) { S.menu = S.menu === v ? null : v; },
+  item(v) { if (v === 'Exit') toast('This is a training simulator. Use “Back to module” to leave.'); else notSimulated(v); },
+  tbActions() { S.left = 'actions'; },
+  tbHome() { S.left = 'favorites'; },
+  tbOpen() { toast('Tip: open notebooks from the <b>Actions</b> panel (house button).'); },
+  tbTree() { notSimulated('Tree view'); },
+  tbHist() { notSimulated('History'); },
+  tbNo() { toast('This tool is not part of this simulation.'); },
+  selAction(v) { S.selAction = v; },
+  csMode(v) { S.cs.mode = v; if (v === 'New') toast('Creating a new customer is covered in a later lesson.'); },
+  csSearch() { doSearch(false); },
+  csOk() { doSearch(true); },
+  csCancel() { S.dialog = null; },
+  csFilter() { toast('Status Filter lets you limit the search to Active, Inactive or Prospect customers.'); },
+  warnYes() {
+    S.flags.warnYes = true;
+    if (S.warnNext === 'dealList') { S.dialog = 'dealList'; S.dlSel = null; } else { S.dialog = 'custList'; S.listSel = null; }
+  },
+  warnNo() { S.dialog = S.warnNext === 'dealList' ? 'dealSelect' : 'custSelect'; },
+  listSel(v) { S.listSel = v; },
+  clOk() { if (!S.listSel) { toast('Select a customer first.'); return; } openNotebook(S.listSel); },
+  clCancel() { S.dialog = 'custSelect'; },
+  nbmenu(v) {
+    if (v === 'Instant Message') { notSimulated('Instant Message'); return; }
+    S.nb.menu = S.nb.menu === v ? null : v;
+    if (S.nb.menu) S.flags['nbmenu_' + v] = true;
+  },
+  nbitem(v) {
+    if (v === 'Update' || v === 'Inquiry') toggleMode();
+    else if (v === 'Save') { S.flags.saved = true; S.nb.dirty = false; toast(`Customer <b>${esc(cur().short)}</b> saved.`); }
+    else if (v === 'Exit') tryExit();
+    else if (v === 'Open') openCustSelect();
+    else if (v === 'Drop in Folder') toast('Notebook added to your Favorites folder.');
+    else notSimulated(v);
+  },
+  nbclose() { tryExit(); },
+  tab(v) { S.nb.tab = v; S.nb.sel = null; },
+  toggleMode() { toggleMode(); },
+  lookup(v) { toast(`The <b>${esc(v)}</b> button opens a lookup list to choose a value.`); },
+  aliasSel(v) { S.nb.aliasSel = +v; },
+  aliasAdd() {
+    openForm('Add Alias', [{ k: 'type', label: 'Alias Type', opts: ['Former Name', 'Trading Name', 'SWIFT ID'] }, { k: 'name', label: 'Alias Name' }], vals => {
+      cur().aliases.push({ type: vals.type, name: vals.name }); S.nb.dirty = true;
+    });
+  },
+  aliasDel() { cur().aliases.splice(S.nb.aliasSel, 1); S.nb.aliasSel = null; S.nb.dirty = true; },
+  persSel(v) { S.nb.persSel = +v; },
+  persAdd() {
+    openForm('Add Personnel', [{ k: 'user', label: 'User Name', opts: ['DAM1 *', 'JSMITH', 'AMARTIN'] }, { k: 'role', label: 'Role', opts: ['Relationship Manager', 'Credit Officer', 'Servicing Officer'] }, { k: 'access', label: 'Access Level', opts: ['Full', 'Read Only'] }], vals => {
+      cur().personnel.push(vals); S.nb.dirty = true;
+    });
+  },
+  persDel() { cur().personnel.splice(S.nb.persSel, 1); S.nb.persSel = null; S.nb.dirty = true; },
+  persUser() { toast(S.nb.persSel == null ? 'Select a user first, then click <b>User</b> to drill down.' : 'Shows the details of the selected user.'); },
+  profSel(v) { S.nb.sel = v; },
+  addProfile() { S.dialog = 'addProfile'; S.apSel = null; },
+  apSel(v) { S.apSel = v; },
+  apOk() {
+    if (!S.apSel) { toast('Choose a profile type.'); return; }
+    const c = cur(); c.profiles.push({ type: S.apSel, status: 'Not In Use', locs: [] });
+    S.nb.sel = String(c.profiles.length - 1); S.nb.dirty = true; S.dialog = null;
+    toast(`<b>${S.apSel}</b> profile added. Now add a location to it.`);
+  },
+  addLoc() {
+    const pi = +S.nb.sel.split('-')[0], p = cur().profiles[pi];
+    openForm('Add Location: ' + p.type, [{ k: 'loc', label: 'Location', opts: LOCATIONS }], vals => {
+      if (p.locs.some(l => l.name === vals.loc)) { toast('This location already exists for the profile.'); return; }
+      p.locs.push({ name: vals.loc, status: 'Incomplete' });
+      S.nb.sel = `${pi}-${p.locs.length - 1}`; S.nb.dirty = true;
+    });
+  },
+  profDel() {
+    const [pi, li] = S.nb.sel.split('-'), p = cur().profiles[+pi];
+    if (li != null) { p.locs.splice(+li, 1); }
+    else if (p.status === 'In Use') { toast('A profile that is <b>In Use</b> cannot be deleted.'); return; }
+    else cur().profiles.splice(+pi, 1);
+    S.nb.sel = null; S.nb.dirty = true;
+  },
+  completeLoc() {
+    const [pi, li] = S.nb.sel.split('-');
+    cur().profiles[+pi].locs[+li].status = 'Complete'; S.nb.dirty = true;
+    toast('Location completed. In the real application, you also enter its addresses, contacts and remittance instructions.');
+  },
+  locBtn(v) { if (v === 'Remittance Instructions') openRIList(); else notSimulated(v); },
+  // ----- remittance instructions (Module 2) -----
+  selFav(v) { S.selFav = v; },
+  ariType(v) { S.addRIType = v; },
+  ariOk() {
+    if (S.addRIType !== 'Standard') { toast('Simplified IMT remittance instructions are not part of this exercise. Choose <b>Standard</b>.'); return; }
+    const lw = getWin(S.addRIFor);
+    if (!lw) { S.dialog = null; return; }
+    const ri = { id: ++S.riSeq, method: '', desc: '', aba: '', bank: '', b2b: '', allLoan: true, sblc: true, dirFrom: false, dirTo: true, balP: true, balI: true, balF: true, ccy: '', acct: '', benType: '', info: '', autoDoIt: false, status: 'Pending', saved: false };
+    lw.loc.ris.push(ri);
+    S.dialog = null;
+    openWin('riDetail', { key: 'ri' + ri.id, ri, loc: lw.loc, update: true });
+    S.flags.riDetail = true;
+  },
+  riSel(v) { const [id, i] = splitV(v), w = getWin(id); if (w) w.sel = +i; },
+  wfSel(v) { const w = getWin(v); if (w) w.wfSel = true; },
+  sbBy(v) { S.bank.by = v; S.bank.q = ''; },
+  sbSel(v) { S.bank.sel = v; },
+  sbOk() { pickBank(); },
+  formOk() {
+    const f = S.form, missing = f.fields.find(x => !String(f.vals[x.k]).trim());
+    if (missing) { toast(`Enter a value for <b>${esc(missing.label)}</b>.`); return; }
+    S.dialog = null; f.ok(f.vals);
+  },
+  closeDlg() { S.dialog = null; },
+  exitYes() { S.flags.saved = true; closeNb(); },
+  exitNo() { closeNb(); },
+  // ----- deal / multi-window (Lesson 3) -----
+  dsMode(v) { S.ds.mode = v; if (v !== 'Existing') toast('Creating deals is not part of this lesson. Keep <b>Existing</b>.'); },
+  dsStatus(v) { S.ds.status = v; },
+  dsSearch() { dealSearch(false); },
+  dsOk() { dealSearch(true); },
+  dlSel(v) { S.dlSel = v; },
+  dlOk() { if (!S.dlSel) { toast('Select a deal first.'); return; } openDeal(S.dlSel); },
+  dlCancel() { S.dialog = 'dealSelect'; },
+  wmenu(v) {
+    const [id, n] = splitV(v), w = getWin(id);
+    if (!w) return;
+    if (!WIN[w.type].frame(w).menus[n]) { w.menu = null; notSimulated(n); return; }
+    w.menu = w.menu === n ? null : n;
+  },
+  witem(v) { const [id, t] = splitV(v), w = getWin(id); if (!w) return; w.menu = null; winAction(w, t); },
+  wtab(v) { const [id, t] = splitV(v), w = getWin(id); if (!w) return; w.tab = t; S.flags[`tab_${w.type}_${t}`] = true; },
+  wmode(v) { toggleWinMode(getWin(v)); },
+  wclose(v) { closeWin(v); },
+  wbtn(v) { const [id, t] = splitV(v), w = getWin(id); if (w) winAction(w, t); },
+  lqToggle(v) { const w = getWin(v); if (w) w.exp = !w.exp; },
+  facSel(v) { const w = getWin(v); if (w) w.sel = true; },
+  loanSel(v) { const w = getWin(v); if (w) w.sel = true; },
+  loansOpt(v) { const [id, k] = splitV(v), w = getWin(id); if (w) w[k] = !w[k]; },
+  osMode(v) { S.os.mode = v; },
+  osChk(v) { S.os[v] = !S.os[v]; },
+  osSearch() { outSearch(); },
+  ctx(v) {
+    S.ctx = null;
+    if (v === 'Close All Windows') closeAll();
+    else if (v === 'Window List') {
+      const t = [...(S.nb ? ['Active Customer -- ' + cur().short] : []), ...S.wins.map(w => WIN[w.type].title(w))];
+      toast(t.length ? '<b>Open windows:</b><br>' + t.map(esc).join('<br>') : 'No windows are open.');
+    } else if (v === 'About BNPP Simulator') toast('<b>BNPP Simulator</b>: training environment.');
+    else notSimulated(v);
+  },
+};
+const SIM_DBL = {
+  openAction(v) {
+    if (v === 'Customer') openCustSelect();
+    else if (v === 'Deal') openDealSelect();
+    else toast(`<b>${esc(v)}</b> is not part of this module's simulation.`);
+  },
+  listOpen(v) { openNotebook(v); },
+  dlOpen(v) { openDeal(v); },
+  openFav(v) {
+    if (v === 'SMITH CORPORATION') openNotebook(SMITH_ID);
+    else toast(`<b>${esc(v)}</b> is not part of this exercise.`);
+  },
+  riOpen(v) {
+    const [id, i] = splitV(v), lw = getWin(id), ri = lw && lw.loc.ris[+i];
+    if (ri) openWin('riDetail', { key: 'ri' + ri.id, ri, loc: lw.loc, update: lw.update });
+  },
+  wfDo(v) { const w = getWin(v); if (w) wfDo(w); },
+  sbOpen(v) { S.bank.sel = v; pickBank(); },
+  facOpen() { openFacility(); },
+  loanOpen(v) {
+    const lw = getWin(v);
+    openWin('loan', { update: !!(lw && lw.openUpd) });
+    S.flags.loan = true;
+    if (lw && !lw.remain) closeWin(lw.id);
+  },
+};
+
+/* ---------- events ---------- */
+let lastClick = { key: null, t: 0 };
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-a]');
+  if (VIEW !== 'sim') {
+    if (t && PAGE_ACTIONS[t.dataset.a]) PAGE_ACTIONS[t.dataset.a](t.dataset.v, t, e);
+    return;
+  }
+  const a = t && t.dataset.a;
+  const hadMenu = S.menu || (S.nb && S.nb.menu) || S.ctx || S.wins.some(w => w.menu);
+  if (a !== 'menu') S.menu = null;
+  if (a !== 'nbmenu' && S.nb) S.nb.menu = null;
+  if (a !== 'ctx') S.ctx = null;
+  const keepW = a === 'wmenu' ? +t.dataset.v.split('|')[0] : null;
+  S.wins.forEach(w => { if (w.id !== keepW) w.menu = null; });
+  // clicking anywhere on a window brings it to the front
+  const wEl = e.target.closest('[data-win]');
+  const moved = wEl ? focusWin(+wEl.dataset.win) : false;
+  if (!t) { if (hadMenu || moved) update(); return; }
+  if (SIM_ACTIONS[a]) SIM_ACTIONS[a](t.dataset.v, t, e);
+  // double-click detection (done manually because the screen re-renders between clicks)
+  if (t.dataset.d) {
+    const key = t.dataset.d + '|' + t.dataset.v, now = Date.now();
+    if (lastClick.key === key && now - lastClick.t < 450) { SIM_DBL[t.dataset.d](t.dataset.v); lastClick = { key: null, t: 0 }; }
+    else lastClick = { key, t: now };
+  }
+  if (VIEW === 'sim') update();
+});
+
+function setBind(path, val) {
+  const [root, k] = path.split('.');
+  if (root === 'form') { if (S.form) S.form.vals[k] = val; }
+  else if (S[root] && typeof S[root] === 'object') S[root][k] = val; // cs, ds, os
+}
+document.addEventListener('input', e => {
+  if (VIEW !== 'sim') return;
+  const t = e.target;
+  if (t.dataset.rif) { riField(t); return; }
+  if (t.dataset.bind) {
+    setBind(t.dataset.bind, t.value);
+    if (t.dataset.live) { // live filter: redraw, then put the cursor back at the end of the field
+      const b = t.dataset.bind, pos = t.value.length;
+      update();
+      const el = document.querySelector(`[data-bind="${b}"]`);
+      if (el) { el.focus(); el.setSelectionRange(pos, pos); }
+    }
+  }
+});
+document.addEventListener('change', e => {
+  if (VIEW !== 'sim') return;
+  const t = e.target;
+  if (t.dataset.rif) { riField(t); return; }
+  if (t.dataset.bind) setBind(t.dataset.bind, t.value);
+  if (t.dataset.f && S.nb) {
+    cur()[t.dataset.f] = t.type === 'checkbox' ? t.checked : t.value;
+    S.nb.dirty = true;
+    if (t.dataset.f === 'short') update();
+  }
+});
+document.addEventListener('keydown', e => {
+  if (VIEW !== 'sim') return;
+  if (e.key === 'F7') {
+    e.preventDefault();
+    if (!S.dialog) {
+      const w = topWin(); // F7 acts on the front window
+      if (w) toggleWinMode(w); else if (S.nb) toggleMode();
+      update();
+    }
+  } else if (e.key === 'Escape') {
+    if (S.ctx || S.menu || (S.nb && S.nb.menu) || S.wins.some(w => w.menu)) { S.ctx = null; S.menu = null; if (S.nb) S.nb.menu = null; S.wins.forEach(w => { w.menu = null; }); }
+    else if (S.dialog === 'warning') S.dialog = S.warnNext === 'dealList' ? 'dealSelect' : 'custSelect';
+    else if (S.dialog === 'custList') S.dialog = 'custSelect';
+    else if (S.dialog === 'dealList') S.dialog = 'dealSelect';
+    else if (S.dialog) S.dialog = null;
+    update();
+  } else if (e.key === 'Enter') {
+    const b = e.target.dataset && e.target.dataset.bind;
+    if (b === 'cs.text') { e.preventDefault(); doSearch(false); update(); }
+    else if (b === 'ds.text') { e.preventDefault(); dealSearch(false); update(); }
+    else if (e.target.dataset.rif && e.target.tagName === 'INPUT') { e.preventDefault(); riField(e.target); update(); }
+    else if (b && b.startsWith('form.')) { e.preventDefault(); SIM_ACTIONS.formOk(); update(); }
+    else if (b === 'search') toast('Global search is not simulated. Use the <b>Actions</b> panel.');
+  }
+});
+
+// right-click in the workspace opens the context menu (About, Close All Windows, ...)
+document.addEventListener('contextmenu', e => {
+  if (VIEW !== 'sim') return;
+  const mdi = e.target.closest('.w-mdi');
+  if (!mdi) return;
+  e.preventDefault();
+  const r = mdi.getBoundingClientRect();
+  S.ctx = { x: Math.max(0, Math.min(e.clientX - r.left, r.width - 190)), y: Math.max(0, Math.min(e.clientY - r.top, r.height - 220)) };
+  S.menu = null; if (S.nb) S.nb.menu = null; S.wins.forEach(w => { w.menu = null; });
+  const wEl = e.target.closest('[data-win]');
+  if (wEl) focusWin(+wEl.dataset.win);
+  update();
+});
+
+// drag windows by their title bar (moves the element directly, no re-render while dragging)
+let drag = null;
+document.addEventListener('mousedown', e => {
+  if (VIEW !== 'sim' || e.button !== 0) return;
+  const h = e.target.closest('[data-drag]');
+  if (!h || e.target.closest('button')) return;
+  const w = getWin(h.dataset.drag);
+  if (!w) return;
+  drag = { w, el: h.closest('.xwin'), sx: e.clientX, sy: e.clientY, ox: w.x, oy: w.y };
+  e.preventDefault();
+});
+document.addEventListener('mousemove', e => {
+  if (!drag) return;
+  drag.w.x = Math.max(-300, drag.ox + e.clientX - drag.sx);
+  drag.w.y = Math.max(0, drag.oy + e.clientY - drag.sy);
+  drag.el.style.left = drag.w.x + 'px';
+  drag.el.style.top = drag.w.y + 'px';
+});
+document.addEventListener('mouseup', () => { drag = null; });
+
+/* ---------------- router ---------------- */
+function route() {
+  const parts = location.hash.replace(/^#\/?/, '').split('/');
+  if (parts[0] === 'module') renderModule(parts[1], parts[2]);
+  else if (parts[0] === 'sim') startSim(parts[1]);
+  else renderHome();
+}
+window.addEventListener('hashchange', route);
+route();
+</script>
+</body>
+</html>
