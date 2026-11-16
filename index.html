@@ -350,8 +350,23 @@ fieldset.box legend{padding:0 4px}
    - SIMS:    guided simulations launched from a section
    ===================================================================== */
 
-const LOGO = `<svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#00915A"/><path d="M9 23c0-8 6-14 15-14-1 9-6 15-14 15" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M9 24l7-7" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg>`;
-const LOGO_SM = LOGO.replace('width="28" height="28"','width="14" height="14"');
+// Default logo (generic green leaf). If logo.png sits next to this HTML file, it replaces it everywhere (see loadLogo).
+let LOGO = `<svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#00915A"/><path d="M9 23c0-8 6-14 15-14-1 9-6 15-14 15" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M9 24l7-7" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg>`;
+let LOGO_SM = LOGO.replace('width="28" height="28"','width="14" height="14"');
+
+function loadLogo() {
+  const img = new Image();
+  img.onload = () => {
+    const tag = size => `<img src="logo.png" alt="" width="${size}" height="${size}" style="object-fit:contain;flex:none;display:inline-block;vertical-align:middle">`;
+    LOGO = tag(28);
+    LOGO_SM = tag(14);
+    const icon = document.createElement('link');
+    icon.rel = 'icon'; icon.href = 'logo.png';
+    document.head.appendChild(icon);
+    if (VIEW === 'sim') renderSim(); else route(); // redraw with the logo, without restarting a running simulation
+  };
+  img.src = 'logo.png'; // if missing, onload never fires and the default leaf stays
+}
 
 const ICON = (inner) => `<svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor" aria-hidden="true">${inner}</svg>`;
 const ICONS = {
@@ -930,8 +945,28 @@ function advance() {
 function markDone() { const sim = SIMS[S.simId]; const p = loadProg(); p[sim.module + '/' + sim.section] = true; saveProg(p); }
 function update() { advance(); renderSim(); }
 
+// The screen is redrawn after every click, so scroll positions are saved and put back.
+// Any element with data-keep-scroll="<key>" keeps its scroll position between redraws.
+function saveScroll() {
+  const m = {};
+  document.querySelectorAll('[data-keep-scroll]').forEach(el => { m[el.dataset.keepScroll] = [el.scrollTop, el.scrollLeft]; });
+  return m;
+}
+function restoreScroll(m) {
+  document.querySelectorAll('[data-keep-scroll]').forEach(el => { const v = m[el.dataset.keepScroll]; if (v) { el.scrollTop = v[0]; el.scrollLeft = v[1]; } });
+}
+// when a guided step is completed, bring the new current step into view inside the task panel only
+function showCurrentStep() {
+  const panel = document.querySelector('.tasks'), li = panel && panel.querySelector('.tk-list li.cur');
+  if (!li) return;
+  const p = panel.getBoundingClientRect(), r = li.getBoundingClientRect();
+  if (r.top < p.top) panel.scrollTop -= p.top - r.top + 12;
+  else if (r.bottom > p.bottom) panel.scrollTop += r.bottom - p.bottom + 12;
+}
+
 function renderSim() {
   const sim = SIMS[S.simId];
+  const scroll = saveScroll();
   app.innerHTML = `<div class="simpage">
     <div class="simbar">
       <button class="sb-back" data-a="back">← Back to module</button>
@@ -943,7 +978,7 @@ function renderSim() {
     </div>
     <div class="simbody">
       ${tasksPanel()}
-      <div class="desk"><div class="desk-inner">${appWindow()}</div>
+      <div class="desk" data-keep-scroll="desk"><div class="desk-inner">${appWindow()}</div>
         ${S.done && S.guided && !S.doneDismissed ? `<div class="done-ov"><div class="done-card">
           <div class="big">✓</div><h3>Simulation complete</h3>
           <p>You completed all ${sim.steps.length} steps. Well done!</p>
@@ -952,6 +987,8 @@ function renderSim() {
       </div>
     </div>
   </div>`;
+  restoreScroll(scroll);
+  if (S.lastStep !== S.step) { S.lastStep = S.step; showCurrentStep(); }
   if (S.hintOn && S.guided) {
     const st = sim.steps[S.step];
     if (st) {
@@ -969,7 +1006,7 @@ function tasksPanel() {
   const sim = SIMS[S.simId], steps = sim.steps;
   const doneArr = steps.map((st, i) => S.guided ? i < S.step : st.check(S));
   const n = doneArr.filter(Boolean).length;
-  return `<aside class="tasks ${S.guided ? '' : 'free'}">
+  return `<aside class="tasks ${S.guided ? '' : 'free'}" data-keep-scroll="tasks">
     <div class="tk-kicker">${S.guided ? 'Guided practice' : 'Free practice'}</div>
     <div class="tk-prog"><div style="width:${Math.round(n / steps.length * 100)}%"></div></div>
     <div class="tk-count">${n} / ${steps.length} steps</div>
@@ -1013,7 +1050,7 @@ function appWindow() {
       <div class="w-brand">${LOGO}<span><b>BNPP</b> SIMULATOR</span></div>
     </div>
     <div class="w-work">
-      <div class="w-tree">${treePanel()}</div>
+      <div class="w-tree" data-keep-scroll="tree-${S.left}">${treePanel()}</div>
       <div class="w-mdi">${S.nb ? notebook() : ''}${S.wins.map(renderWin).join('')}${dialog()}${ctxMenu()}</div>
     </div>
     <div class="w-status"><span></span><span>Last Successful Login: 2023-12-19 09:34:55</span><span></span><span>Process List</span><span>Training Environment - 7622</span><span>${S.date}</span></div>
@@ -1058,7 +1095,7 @@ function notebook() {
     <div class="nb-title" data-sim="nb-title">${LOGO_SM}<span>Active Customer -- ${esc(c.short)}</span><button class="nb-x" data-a="nbclose" title="Close">✕</button></div>
     <div class="w-menu">${menuBar('nb', ['File', 'Options', 'Queries', 'Accounting', 'Instant Message'], menus, nb.menu)}</div>
     <div class="nb-tabs"><div class="trow">${NB_TABS1.map(tabBtn).join('')}</div><div class="trow">${NB_TABS2.map(tabBtn).join('')}</div></div>
-    <div class="nb-body">${body}</div>
+    <div class="nb-body" data-keep-scroll="nb-${nb.cid}-${nb.tab}">${body}</div>
     <div class="nb-foot"><button class="modebtn ${nb.update ? 'upd' : ''}" data-a="toggleMode" data-sim="nb-mode">Notebook in ${nb.update ? 'Update' : 'Inquiry'} Mode - F7</button><span class="nb-kind">-- Customer Notebook</span></div>
   </div>`;
 }
@@ -1266,7 +1303,7 @@ function winFrame(w, o) {
     <div class="nb-title" data-drag="${w.id}">${LOGO_SM}<span>${esc(o.title)}</span><button class="nb-x" data-a="wclose" data-v="${w.id}" title="Close">✕</button></div>
     ${o.menus ? `<div class="w-menu">${menuBar('w', Object.keys(o.menus), o.menus, w.menu, w.id)}</div>` : ''}
     ${rows}
-    <div class="xbody">${o.body}</div>
+    <div class="xbody" data-keep-scroll="win-${w.id}-${w.tab}">${o.body}</div>
     ${o.kind ? `<div class="nb-foot"><button class="modebtn ${w.update ? 'upd' : ''}" data-a="wmode" data-v="${w.id}" data-sim="wmode">Notebook in ${w.update ? 'Update' : 'Inquiry'} Mode - F7</button><span class="nb-kind">-- ${o.kind}</span></div>` : ''}
   </div>`;
 }
@@ -1459,7 +1496,11 @@ function refreshTasks() {
   advance();
   if (S.done && S.guided && !S.doneDismissed) { renderSim(); return; }
   const el = document.querySelector('.tasks');
-  if (el) el.outerHTML = tasksPanel();
+  if (!el) return;
+  const top = el.scrollTop;
+  el.outerHTML = tasksPanel();
+  document.querySelector('.tasks').scrollTop = top;
+  if (S.lastStep !== S.step) { S.lastStep = S.step; showCurrentStep(); }
 }
 
 function dealSummary(w) {
@@ -2024,6 +2065,7 @@ function route() {
 }
 window.addEventListener('hashchange', route);
 route();
+loadLogo();
 </script>
 </body>
 </html>
