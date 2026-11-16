@@ -215,6 +215,7 @@ ol.big li{margin:6px 0}
 .w-search input{flex:1}
 .w-brand{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:15px;letter-spacing:.06em;padding-right:6px;white-space:nowrap}
 .w-brand b{font-weight:800}
+.w-brand img{height:28px!important}
 .w-work{flex:1;display:flex;min-height:0}
 .w-tree{width:300px;flex:none;border-right:5px solid #dadada;overflow:auto}
 .w-mdi{flex:1;position:relative;background:#efefef;overflow:hidden}
@@ -357,9 +358,10 @@ let LOGO_SM = LOGO.replace('width="28" height="28"','width="14" height="14"');
 function loadLogo() {
   const img = new Image();
   img.onload = () => {
-    const tag = size => `<img src="logo.png" alt="" width="${size}" height="${size}" style="object-fit:contain;flex:none;display:inline-block;vertical-align:middle">`;
-    LOGO = tag(28);
-    LOGO_SM = tag(14);
+    // keep the image's own shape: fixed height, natural width (a wide logo is not squeezed into a square)
+    const tag = h => `<img src="logo.png" alt="" style="height:${h}px;width:auto;max-width:${h * 5}px;object-fit:contain;flex:none;display:inline-block;vertical-align:middle">`;
+    LOGO = tag(44);
+    LOGO_SM = tag(16);
     const icon = document.createElement('link');
     icon.rel = 'icon'; icon.href = 'logo.png';
     document.head.appendChild(icon);
